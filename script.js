@@ -88,3 +88,13 @@ window.onclick = function(event) {
         event.target.style.display = "none";
     }
 }
+// script.js 최하단에 추가
+function updateBoardImage(input, targetId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(targetId).src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
