@@ -1,0 +1,42 @@
+// 사이드 메뉴 토글
+function toggleMenu() {
+    const menu = document.getElementById('sideMenu');
+    menu.classList.toggle('active');
+}
+
+// 홈으로 이동 (새로고침 시뮬레이션)
+function goHome() {
+    location.reload();
+}
+
+// 회원가입 모달 열기/닫기
+function openJoinModal() {
+    document.getElementById('joinModal').style.display = 'block';
+}
+
+function closeJoinModal() {
+    document.getElementById('joinModal').style.display = 'none';
+}
+
+// 게시판 로드 (콘솔 확인용)
+function loadBoard(name) {
+    alert(name + "으로 이동합니다.");
+    toggleMenu(); // 메뉴 닫기
+    
+    // 메인 영역을 해당 게시판 이름으로 변경 (예시)
+    document.getElementById('mainContent').innerHTML = `
+        <div style="padding:20px;">
+            <h2>${name}</h2>
+            <p>익명 게시글이 나열될 공간입니다.</p>
+            <button onclick="goHome()">뒤로가기</button>
+        </div>
+    `;
+}
+
+// 모달 바깥 클릭 시 닫기
+window.onclick = function(event) {
+    const modal = document.getElementById('joinModal');
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
