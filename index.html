@@ -36,14 +36,25 @@
     </nav>
 
     <main id="mainContent">
-        <div class="image-placeholder top-banner">이미지 추가 예정</div>
-        <div class="content-gap"></div>
-        <div class="image-placeholder main-banner">이미지 추가 예정</div>
+        <div id="homeView">
+            <div class="image-placeholder top-banner">이미지 추가 예정</div>
+            <div class="content-gap"></div>
+            <div class="image-placeholder main-banner">이미지 추가 예정</div>
+        </div>
+
+        <div id="boardView" style="display: none;">
+            <div class="board-header">
+                <h2 id="currentBoardTitle">게시판 이름</h2>
+                <button id="writeBtn" class="main-btn" onclick="openPostModal()">글쓰기</button>
+            </div>
+            <div id="postList" class="post-list">
+                </div>
+        </div>
     </main>
 
     <div id="joinModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeJoinModal()">&times;</span>
+            <span class="close" onclick="closeModal('joinModal')">&times;</span>
             <h2>회원가입</h2>
             <form id="joinForm">
                 <input type="text" placeholder="아이디" required>
@@ -54,8 +65,18 @@
                     <option value="매니저">매니저</option>
                     <option value="책임 매니저">책임 매니저</option>
                 </select>
-                <button type="submit">가입하기</button>
+                <button type="submit" class="main-btn">가입하기</button>
             </form>
+        </div>
+    </div>
+
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('postModal')">&times;</span>
+            <h2>새 글 작성</h2>
+            <input type="text" id="postTitle" placeholder="제목을 입력하세요">
+            <textarea id="postContent" placeholder="내용을 입력하세요" rows="8"></textarea>
+            <button class="main-btn" onclick="savePost()">등록하기</button>
         </div>
     </div>
 
