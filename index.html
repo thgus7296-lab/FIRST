@@ -1,26 +1,64 @@
-<main id="mainContent">
-    <div id="homeView">
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H1 Blind</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <header>
+        <div class="header-left" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+        <div class="header-center" onclick="goHome()">
+            <h1>H1 Blind</h1>
+        </div>
+        <div class="header-right" onclick="openJoinModal()">
+            <i class="fas fa-user"></i>
+        </div>
+    </header>
+
+    <nav id="sideMenu" class="side-menu">
+        <div class="menu-content">
+            <h3>게시판 목록</h3>
+            <ul>
+                <li onclick="loadBoard('1공장 라운지')">1공장 라운지</li>
+                <li onclick="loadBoard('경제 라운지')">경제 라운지</li>
+                <li onclick="loadBoard('책임 라운지')">책임 라운지 (권한필요)</li>
+                <li onclick="loadBoard('매니저 라운지')">매니저 라운지 (권한필요)</li>
+                <li onclick="loadBoard('운동 라운지')">운동 라운지</li>
+                <li onclick="loadBoard('대나무 라운지')">대나무 라운지 (댓글 전용)</li>
+            </ul>
+        </div>
+    </nav>
+
+    <main id="mainContent">
         <div class="image-placeholder top-banner">이미지 추가 예정</div>
         <div class="content-gap"></div>
         <div class="image-placeholder main-banner">이미지 추가 예정</div>
-    </div>
+    </main>
 
-    <div id="boardView" style="display: none;">
-        <div class="board-header">
-            <h2 id="currentBoardTitle">게시판 이름</h2>
-            <button id="writeBtn" onclick="openPostModal()">글쓰기</button>
+    <div id="joinModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeJoinModal()">&times;</span>
+            <h2>회원가입</h2>
+            <form id="joinForm">
+                <input type="text" placeholder="아이디" required>
+                <input type="password" placeholder="비밀번호" required>
+                <input type="text" placeholder="성명" required>
+                <input type="text" placeholder="전화번호" required>
+                <select id="position">
+                    <option value="매니저">매니저</option>
+                    <option value="책임 매니저">책임 매니저</option>
+                </select>
+                <button type="submit">가입하기</button>
+            </form>
         </div>
-        <div id="postList" class="post-list">
-            </div>
     </div>
-</main>
 
-<div id="postModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closePostModal()">&times;</span>
-        <h2 id="modalTitle">새 글 작성</h2>
-        <input type="text" id="postTitle" placeholder="제목을 입력하세요">
-        <textarea id="postContent" placeholder="내용을 입력하세요" rows="5"></textarea>
-        <button onclick="savePost()">등록하기</button>
-    </div>
-</div>
+    <script src="script.js"></script>
+</body>
+</html>
