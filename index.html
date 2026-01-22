@@ -42,14 +42,27 @@
             <div class="image-placeholder main-banner">이미지 추가 예정</div>
         </div>
 
-        <div id="boardView" style="display: none;">
-            <div class="board-header">
-                <h2 id="currentBoardTitle">게시판 이름</h2>
-                <button id="writeBtn" class="main-btn" onclick="openPostModal()">글쓰기</button>
-            </div>
-            <div id="postList" class="post-list">
-                </div>
+<div id="boardView" style="display: none;">
+    <div class="board-visual-area">
+        <div class="rect-banner" onclick="document.getElementById('bgInput').click()">
+            <img id="bgDisplay" src="https://via.placeholder.com/800x200" alt="배경">
+            <div class="camera-icon"><i class="fas fa-camera"></i></div>
         </div>
+        <div class="circle-profile" onclick="document.getElementById('profileInput').click()">
+            <img id="profileDisplay" src="https://via.placeholder.com/100x100" alt="프로필">
+            <div class="camera-icon small"><i class="fas fa-camera"></i></div>
+        </div>
+    </div>
+
+    <input type="file" id="bgInput" hidden accept="image/*" onchange="updateBoardImage(this, 'bgDisplay')">
+    <input type="file" id="profileInput" hidden accept="image/*" onchange="updateBoardImage(this, 'profileDisplay')">
+
+    <div class="board-header">
+        <h2 id="currentBoardTitle">게시판 이름</h2>
+        <button id="writeBtn" class="main-btn" onclick="openPostModal()">글쓰기</button>
+    </div>
+    <div id="postList" class="post-list"></div>
+</div>
     </main>
 
     <div id="joinModal" class="modal">
