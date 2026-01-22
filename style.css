@@ -70,3 +70,44 @@ header {
     cursor: pointer;
 }
 .post-item:hover { background-color: #f9f9f9; }
+
+/* style.css 최하단에 복사해서 붙여넣으세요 */
+.board-visual-area {
+    position: relative;
+    width: 100%;
+    margin-bottom: 40px;
+}
+
+.rect-banner {
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+}
+
+.rect-banner img { width: 100%; height: 100%; object-fit: cover; }
+
+.circle-profile {
+    position: absolute;
+    bottom: -35px;
+    left: 20px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 4px solid white;
+    overflow: hidden;
+    cursor: pointer;
+    background: #fff;
+    z-index: 10;
+}
+
+.circle-profile img { width: 100%; height: 100%; object-fit: cover; }
+
+.camera-icon {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.2); color: #fff;
+    display: flex; justify-content: center; align-items: center;
+    opacity: 0; transition: 0.3s;
+}
+.rect-banner:hover .camera-icon, .circle-profile:hover .camera-icon { opacity: 1; }
