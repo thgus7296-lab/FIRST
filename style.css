@@ -1,42 +1,80 @@
-// 사이드 메뉴 토글
-function toggleMenu() {
-    const menu = document.getElementById('sideMenu');
-    menu.classList.toggle('active');
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+
+/* 공통 버튼 스타일 */
+.main-btn {
+    background: #065d7a;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
 }
 
-// 홈으로 이동 (새로고침 시뮬레이션)
-function goHome() {
-    location.reload();
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-// 회원가입 모달 열기/닫기
-function openJoinModal() {
-    document.getElementById('joinModal').style.display = 'block';
-}
+header h1 { font-size: 1.2rem; cursor: pointer; }
 
-function closeJoinModal() {
-    document.getElementById('joinModal').style.display = 'none';
+/* 사이드 메뉴 */
+.side-menu {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background: #fff;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    transition: 0.3s;
+    z-index: 200;
+    padding: 20px;
 }
+.side-menu.active { left: 0; }
+.side-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; list-style: none; }
 
-// 게시판 로드 (콘솔 확인용)
-function loadBoard(name) {
-    alert(name + "으로 이동합니다.");
-    toggleMenu(); // 메뉴 닫기
-    
-    // 메인 영역을 해당 게시판 이름으로 변경 (예시)
-    document.getElementById('mainContent').innerHTML = `
-        <div style="padding:20px;">
-            <h2>${name}</h2>
-            <p>익명 게시글이 나열될 공간입니다.</p>
-            <button onclick="goHome()">뒤로가기</button>
-        </div>
-    `;
-}
+/* 메인 컨텐츠 */
+.image-placeholder { background-color: #065d7a; color: white; display: flex; justify-content: center; align-items: center; width: 100%; }
+.top-banner { height: 100px; }
+.content-gap { height: 60px; }
+.main-banner { height: calc(100vh - 210px); }
 
-// 모달 바깥 클릭 시 닫기
-window.onclick = function(event) {
-    const modal = document.getElementById('joinModal');
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
+/* 게시판 뷰 */
+.board-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 2px solid #065d7a; }
+.post-list { padding: 10px; }
+.post-item { padding: 15px; border-bottom: 1px solid #eee; }
+
+/* 모달 기본 (디자인 깨짐 방지 핵심) */
+.modal { 
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0; top: 0; 
+    width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.6); 
 }
+.modal-content { 
+    background: white; 
+    margin: 10% auto; 
+    padding: 25px; 
+    width: 90%; 
+    max-width: 500px; 
+    border-radius: 12px;
+    position: relative;
+}
+.modal-content input, .modal-content select, .modal-content textarea { 
+    width: 100%; 
+    padding: 12px; 
+    margin: 10px 0; 
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+.close { position: absolute; right: 20px; top: 15px; font-size: 25px; cursor: pointer; }
