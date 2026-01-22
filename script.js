@@ -1,42 +1,41 @@
-// 사이드 메뉴 토글
-function toggleMenu() {
-    const menu = document.getElementById('sideMenu');
-    menu.classList.toggle('active');
+/* 게시판 헤더 및 버튼 */
+.board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #065d7a;
 }
 
-// 홈으로 이동 (새로고침 시뮬레이션)
-function goHome() {
-    location.reload();
+#writeBtn {
+    padding: 8px 16px;
+    background: #065d7a;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
 }
 
-// 회원가입 모달 열기/닫기
-function openJoinModal() {
-    document.getElementById('joinModal').style.display = 'block';
+/* 게시글 리스트 스타일 */
+.post-list { padding: 10px; }
+.post-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    background: white;
+}
+.post-item h4 { margin-bottom: 5px; color: #333; }
+.post-item .post-info {
+    font-size: 0.8rem;
+    color: #888;
 }
 
-function closeJoinModal() {
-    document.getElementById('joinModal').style.display = 'none';
-}
-
-// 게시판 로드 (콘솔 확인용)
-function loadBoard(name) {
-    alert(name + "으로 이동합니다.");
-    toggleMenu(); // 메뉴 닫기
-    
-    // 메인 영역을 해당 게시판 이름으로 변경 (예시)
-    document.getElementById('mainContent').innerHTML = `
-        <div style="padding:20px;">
-            <h2>${name}</h2>
-            <p>익명 게시글이 나열될 공간입니다.</p>
-            <button onclick="goHome()">뒤로가기</button>
-        </div>
-    `;
-}
-
-// 모달 바깥 클릭 시 닫기
-window.onclick = function(event) {
-    const modal = document.getElementById('joinModal');
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
+/* 텍스트 영역 스타일 */
+textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    resize: none;
 }
