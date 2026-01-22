@@ -1,41 +1,59 @@
-/* 게시판 헤더 및 버튼 */
-.board-header {
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+
+/* 헤더 스타일 */
+header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+header h1 { font-size: 1.2rem; cursor: pointer; }
+header i { font-size: 1.5rem; cursor: pointer; }
+
+/* 사이드 메뉴 */
+.side-menu {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background: #fff;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    transition: 0.3s;
+    z-index: 200;
     padding: 20px;
-    background: #f8f9fa;
-    border-bottom: 2px solid #065d7a;
 }
 
-#writeBtn {
-    padding: 8px 16px;
-    background: #065d7a;
+.side-menu.active { left: 0; }
+.side-menu h3 { margin-bottom: 20px; border-bottom: 2px solid #065d7a; padding-bottom: 10px; }
+.side-menu ul { list-style: none; }
+.side-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; }
+.side-menu li:hover { color: #065d7a; font-weight: bold; }
+
+/* 메인 컨텐츠 (이미지 영역) */
+.image-placeholder {
+    background-color: #065d7a;
     color: white;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-}
-
-/* 게시글 리스트 스타일 */
-.post-list { padding: 10px; }
-.post-item {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
-    background: white;
-}
-.post-item h4 { margin-bottom: 5px; color: #333; }
-.post-item .post-info {
-    font-size: 0.8rem;
-    color: #888;
-}
-
-/* 텍스트 영역 스타일 */
-textarea {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
     width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    resize: none;
 }
+
+.top-banner { height: 100px; }
+.content-gap { height: 60px; background: #fff; }
+.main-banner { height: calc(100vh - 210px); }
+
+/* 모달 스타일 */
+.modal { display: none; position: fixed; z-index: 300; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal-content { background: white; margin: 15% auto; padding: 20px; width: 80%; max-width: 400px; border-radius: 10px; }
+.modal-content input, .modal-content select { width: 100%; padding: 10px; margin: 10px 0; }
+.modal-content button { width: 100%; padding: 10px; background: #065d7a; color: white; border: none; cursor: pointer; }
+.close { float: right; font-size: 28px; cursor: pointer; }
