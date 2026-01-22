@@ -1,59 +1,69 @@
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+// 유저 기본 정보 (나중에 회원가입 데이터와 연결)
+let currentUser = { nickname: "익명 " + Math.floor(Math.random() * 90 + 10) };
+let allPosts = []; // 모든 게시글 저장 배열
 
-/* 헤더 스타일 */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #ddd;
-    background: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+function toggleMenu() {
+    document.getElementById('sideMenu').classList.toggle('active');
 }
 
-header h1 { font-size: 1.2rem; cursor: pointer; }
-header i { font-size: 1.5rem; cursor: pointer; }
-
-/* 사이드 메뉴 */
-.side-menu {
-    position: fixed;
-    left: -250px;
-    top: 0;
-    width: 250px;
-    height: 100%;
-    background: #fff;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    transition: 0.3s;
-    z-index: 200;
-    padding: 20px;
+function goHome() {
+    document.getElementById('homeView').style.display = 'block';
+    document.getElementById('boardView').style.display = 'none';
 }
 
-.side-menu.active { left: 0; }
-.side-menu h3 { margin-bottom: 20px; border-bottom: 2px solid #065d7a; padding-bottom: 10px; }
-.side-menu ul { list-style: none; }
-.side-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; }
-.side-menu li:hover { color: #065d7a; font-weight: bold; }
+// 모달 제어 통합
+function openJoinModal() { document.getElementById('joinModal').style.display = 'block'; }
+function openPostModal() { document.getElementById('postModal').style.display = 'block'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-/* 메인 컨텐츠 (이미지 영역) */
-.image-placeholder {
-    background-color: #065d7a;
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-    width: 100%;
+// 게시판 로드
+function loadBoard(name) {
+    toggleMenu();
+    document.getElementById('homeView').style.display = 'none';
+    document.getElementById('boardView').style.display = 'block';
+    document.getElementById('currentBoardTitle').innerText = name;
+    
+    // 대나무 라운지는 글쓰기 불가 (이미지 요구사항 반영)
+    document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
+    
+    renderPosts(name);
 }
 
-.top-banner { height: 100px; }
-.content-gap { height: 60px; background: #fff; }
-.main-banner { height: calc(100vh - 210px); }
+// 글 저장
+function savePost() {
+    const title = document.getElementById('postTitle').value;
+    const content = document.getElementById('postContent').value;
+    const board = document.getElementById('currentBoardTitle').innerText;
 
-/* 모달 스타일 */
-.modal { display: none; position: fixed; z-index: 300; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-.modal-content { background: white; margin: 15% auto; padding: 20px; width: 80%; max-width: 400px; border-radius: 10px; }
-.modal-content input, .modal-content select { width: 100%; padding: 10px; margin: 10px 0; }
-.modal-content button { width: 100%; padding: 10px; background: #065d7a; color: white; border: none; cursor: pointer; }
-.close { float: right; font-size: 28px; cursor: pointer; }
+    if(!title || !content) return alert("내용을 입력하세요");
+
+    const newPost = { board, title, content, author: currentUser.nickname, date: new Date().toLocaleDateString() };
+    allPosts.unshift(newPost);
+    
+    closeModal('postModal');
+    renderPosts(board);
+    
+    // 입력창 초기화
+    document.getElementById('postTitle').value = "";
+    document.getElementById('postContent').value = "";
+}
+
+// 글 목록 화면에 그리기
+function renderPosts(boardName) {
+    const listDiv = document.getElementById('postList');
+    const filtered = allPosts.filter(p => p.board === boardName);
+    
+    listDiv.innerHTML = filtered.length ? filtered.map(p => `
+        <div class="post-item">
+            <h4>${p.title}</h4>
+            <small>${p.author} | ${p.date}</small>
+        </div>
+    `).join('') : '<p style="padding:20px; color:#888;">첫 게시글을 작성해보세요!</p>';
+}
+
+// 모달 바깥 클릭 시 닫기
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = "none";
+    }
+}
