@@ -16,9 +16,15 @@
         <div class="header-center" onclick="goHome()">
             <h1>H1 Blind</h1>
         </div>
-        <div class="header-right" onclick="openJoinModal()">
-            <i class="fas fa-user"></i>
-        </div>
+<div class="header-right">
+    <span id="loginIcons">
+        <i class="fas fa-user" style="margin-right: 10px;" onclick="openModal('loginModal')"></i>
+        <i class="fas fa-plus-circle" onclick="openModal('joinModal')"></i>
+    </span>
+    <span id="userInfoIcon" style="display: none;" onclick="showUserInfo()">
+        <i class="fas fa-user"></i>
+    </span>
+</div>
     </header>
 
     <nav id="sideMenu" class="side-menu">
@@ -65,23 +71,36 @@
 </div>
     </main>
 
-    <div id="joinModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('joinModal')">&times;</span>
-            <h2>회원가입</h2>
-            <form id="joinForm">
-                <input type="text" placeholder="아이디" required>
-                <input type="password" placeholder="비밀번호" required>
-                <input type="text" placeholder="성명" required>
-                <input type="text" placeholder="전화번호" required>
-                <select id="position">
-                    <option value="매니저">매니저</option>
-                    <option value="책임 매니저">책임 매니저</option>
-                </select>
-                <button type="submit" class="main-btn">가입하기</button>
-            </form>
+<div id="joinModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('joinModal')">&times;</span>
+        <h2>회원가입</h2>
+        <p style="color: red; font-weight: bold; margin-bottom: 10px;">※ 로그인은 사번과 비밀번호로 진행됩니다.</p>
+        <form id="joinForm" onsubmit="handleJoin(event)">
+            <input type="text" id="joinName" placeholder="이름" required>
+            <input type="text" id="joinEmpId" placeholder="사번" required>
+            <input type="password" id="joinPw" placeholder="비밀번호" required>
+            <select id="joinPosition">
+                <option value="매니저">매니저</option>
+                <option value="책임 매니저">책임 매니저</option>
+            </select>
+            <input type="text" id="joinRole" placeholder="직책 (예: 팀장, 파트장)">
+            <button type="submit" class="main-btn">가입하기</button>
+        </form>
+    </div>
+</div>
+
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <h2>로그인</h2>
+        <input type="text" id="loginEmpId" placeholder="사번">
+        <input type="password" id="loginPw" placeholder="비밀번호">
+        <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+            <button class="main-btn" style="background: #888;" onclick="closeModal('loginModal')">취소</button>
+            <button class="main-btn" onclick="handleLogin()">로그인</button>
         </div>
     </div>
+</div>
 
     <div id="postModal" class="modal">
         <div class="modal-content">
