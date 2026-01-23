@@ -10,12 +10,11 @@ function openModal(id) {
 }
 function closeModal(id) {
     const modal = document.getElementById(id);
-    if (!modal) return;
+    if (!modal) return; // 모달이 없으면 종료
 
     if (modal.style.display === 'block') {
         modal.style.display = 'none';
-        
-        // 브라우저 뒤로가기가 아니라 직접 X버튼/취소를 눌렀을 때만 실행
+        // 직접 닫았을 때만 히스토리를 뒤로 돌림 (중복 실행 방지)
         if (history.state && history.state.modalOpen === id) {
             history.back();
         }
