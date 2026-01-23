@@ -1,6 +1,50 @@
 // 1. 초기 설정 및 데이터
-let currentUser = { nickname: "익명 " + Math.floor(Math.random() * 90 + 10), position: "매니저" };
-let allPosts = []; 
+let currentUser = null; 
+let isLoggedIn = false;
+let users = []; // 회원가입 데이터 임시 저장용
+
+function openModal(id) { document.getElementById(id).style.display = 'block'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function handleJoin(event) {
+    event.preventDefault();
+    users.push({
+        name: document.getElementById('joinName').value,
+        empId: document.getElementById('joinEmpId').value,
+        pw: document.getElementById('joinPw').value,
+        position: document.getElementById('joinPosition').value
+    });
+    alert("회원가입이 완료되었습니다.");
+    closeModal('joinModal');
+}
+
+function handleLogin() {
+    const empId = document.getElementById('loginEmpId').value;
+    const pw = document.getElementById('loginPw').value;
+
+    if (empId === "1" && pw === "1") {
+        successLogin({ empId: "1", position: "책임 매니저", name: "관리자" });
+    } else if (empId === "2" && pw === "2") {
+        successLogin({ empId: "2", position: "매니저", name: "사용자" });
+    } else {
+        const user = users.find(u => u.empId === empId && u.pw === pw);
+        if (user) successLogin(user);
+        else alert("정보를 확인해주세요");
+    }
+}
+
+function successLogin(user) {
+    currentUser = user;
+    isLoggedIn = true;
+    document.getElementById('loginIcons').style.display = 'none';
+    document.getElementById('userInfoIcon').style.display = 'inline';
+    closeModal('loginModal');
+    alert(`${user.name}님 환영합니다!`);
+}
+
+function showUserInfo() {
+    alert(`내 정보\n사번: ${currentUser.empId}\n직급: ${currentUser.position}`);
+}
 
 // 2. 메뉴 및 화면 전환
 function toggleMenu() {
@@ -28,6 +72,13 @@ function goHome() {
 
 // 3. 게시판 로드
 function loadBoard(name) {
+
+    // [이 위치에 추가] 로그인 여부를 가장 먼저 확인합니다.
+    if (!isLoggedIn) { 
+        alert("로그인을 해주세요");
+        return; // 로그인이 안 되어 있으면 여기서 함수를 강제 종료합니다.
+    }
+    
     if (name === "매니저 라운지" && currentUser.position !== "매니저") {
         alert("매니저 직급만 입장 가능한 게시판입니다.");
         return;
