@@ -16,23 +16,49 @@ function goHome() {
     document.getElementById('sideMenu').classList.remove('active');
 }
 
-// 3. 게시판 로드 (권한 로직 포함)
+// 3. 게시판 로드 (직급별 전용 접근 권한 설정)
 function loadBoard(name) {
-    // 권한 체크 예시
-    if (name === "책임 라운지" && currentUser.position !== "책임 매니저") {
-        alert("책임 매니저 등급만 입장 가능합니다.");
+    // [수정] 매니저 라운지: 오직 '매니저'만 접근 가능
+    if (name === "매니저 라운지" && currentUser.position !== "매니저") {
+        alert("매니저 직급만 입장 가능한 게시판입니다.");
         return;
     }
 
+    // [수정] 책임 라운지: 오직 '책임 매니저'만 접근 가능
+    if (name === "책임 라운지" && currentUser.position !== "책임 매니저") {
+        alert("책임 매니저 직급만 입장 가능한 게시판입니다.");
+    }
+
+    // 화면 전환 및 데이터 로드 (기본 로직 유지)
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('currentBoardTitle').innerText = name;
     
-    // 대나무 라운지는 댓글 전용이므로 글쓰기 버튼 숨김
+    // 대나무 라운지 글쓰기 제한
     document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
     
-    toggleMenu(); // 메뉴 닫기
+    // 관리자 이미지 수정 권한 설정
+    setAdminPrivileges();
+    
+    toggleMenu(); 
     renderPosts(name);
+}
+
+// 이미지 수정 권한 UI 제어 함수 (HTML 구조와 연결 유지)
+function setAdminPrivileges() {
+    const rect = document.getElementById('rectContainer');
+    const circle = document.getElementById('circleContainer');
+    
+    // 현재는 '책임 매니저'만 이미지 수정이 가능하도록 설정되어 있습니다.
+    if (rect && circle) {
+        if (currentUser.position === "책임 매니저") {
+            rect.classList.add('is-admin');
+            circle.classList.add('is-admin');
+        } else {
+            rect.classList.remove('is-admin');
+            circle.classList.remove('is-admin');
+        }
+    }
 }
 
 // 4. 모달 제어
