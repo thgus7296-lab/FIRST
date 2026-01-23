@@ -10,9 +10,10 @@ function openModal(id) {
 }
 function closeModal(id) {
     const modal = document.getElementById(id);
-    if (modal.style.display === 'block') {
-        modal.style.display = 'none';
-        // 사용자가 X나 취소를 눌러 직접 닫았을 때, 생성된 히스토리 기록을 한 단계 뒤로 돌려 정리합니다.
+    if (modal && modal.style.display === 'block') {
+        modal.style.display = 'none'; // 화면에서 확실히 지움
+        
+        // 브라우저 기록이 모달 상태라면 뒤로가기 실행
         if (history.state && history.state.modalOpen === id) {
             history.back();
         }
@@ -208,20 +209,21 @@ function renderPosts(boardName) {
 
 // [수정] 창 바깥 클릭 시 닫기 로직
 window.onclick = function(event) {
+    // 1. 모달 바깥 클릭 시 닫기
     if (event.target.classList.contains('modal')) {
-        event.target.style.display = "none";
+        closeModal(event.target.id); // 직접 id를 전달하여 히스토리까지 정리
+        return;
     }
     
     const sideMenu = document.getElementById('sideMenu');
     const menuBtn = document.querySelector('.header-left');
     
-    // 메뉴 바깥 클릭 시
+    // 2. 메뉴 바깥 클릭 시 (메뉴가 활성화된 상태에서만 작동하도록)
     if (sideMenu.classList.contains('active') && 
         !sideMenu.contains(event.target) && 
         !menuBtn.contains(event.target)) {
         
-        // 중요: 이 시점에서 goHome()을 부르는 것이 아니라 메뉴만 닫아야 함
-        history.back(); // history.back()이 실행되면서 아래 window.onpopstate가 호출되어 메뉴를 닫음
+        history.back(); // onpopstate가 호출되면서 메뉴를 닫음
     }
 }
 
