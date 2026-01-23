@@ -1,10 +1,8 @@
-// script.js
-
 // 1. 초기 설정 및 데이터
 let currentUser = { nickname: "익명 " + Math.floor(Math.random() * 90 + 10), position: "매니저" };
 let allPosts = []; 
 
-// 2. 메뉴 및 화면 전환 [수정됨]
+// 2. 메뉴 및 화면 전환
 function toggleMenu() {
     const menu = document.getElementById('sideMenu');
     menu.classList.toggle('active');
@@ -18,12 +16,12 @@ function toggleMenu() {
 function goHome() {
     document.getElementById('homeView').style.display = 'block';
     document.getElementById('boardView').style.display = 'none';
-    // 사이드바가 열려있다면 닫기
     document.getElementById('sideMenu').classList.remove('active');
 }
 
-// 3. 게시판 로드 [수정됨]
+// 3. 게시판 로드
 function loadBoard(name) {
+    // 직급별 권한 체크
     if (name === "매니저 라운지" && currentUser.position !== "매니저") {
         alert("매니저 직급만 입장 가능한 게시판입니다.");
         return;
@@ -34,7 +32,7 @@ function loadBoard(name) {
         return;
     }
 
-    // 메뉴가 열린 상태에서 이동 시, 쌓인 히스토리 정리
+    // 메뉴가 열린 상태에서 이동 시 히스토리 정리
     if (document.getElementById('sideMenu').classList.contains('active')) {
         history.back();
     }
@@ -43,48 +41,47 @@ function loadBoard(name) {
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('currentBoardTitle').innerText = name;
     
-    document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
-    
-    setAdminPrivileges();
-    renderPosts(name);
-}
-
-    // 화면 전환 및 데이터 로드 (기본 로직 유지)
-    document.getElementById('homeView').style.display = 'none';
-    document.getElementById('boardView').style.display = 'block';
-    document.getElementById('currentBoardTitle').innerText = name;
-    
     // 대나무 라운지 글쓰기 제한
     document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
     
-    // 관리자 이미지 수정 권한 설정
     setAdminPrivileges();
-    
-    toggleMenu(); 
     renderPosts(name);
 }
 
-// 이미지 수정 권한 UI 제어 함수 (HTML 구조와 연결 유지)
+// 이미지 수정 권한 UI 제어 (책임 매니저만 가능)
 function setAdminPrivileges() {
     const rect = document.getElementById('rectContainer');
     const circle = document.getElementById('circleContainer');
     
-    // 현재는 '책임 매니저'만 이미지 수정이 가능하도록 설정되어 있습니다.
-    if (rect && circle) {
+    // HTML에 해당 ID들이 있는지 확인 후 클래스 부여
+    const rectTarget = document.querySelector('.rect-banner');
+    const circleTarget = document.querySelector('.circle-profile');
+
+    if (rectTarget && circleTarget) {
         if (currentUser.position === "책임 매니저") {
-            rect.classList.add('is-admin');
-            circle.classList.add('is-admin');
+            rectTarget.classList.add('is-admin');
+            circleTarget.classList.add('is-admin');
         } else {
-            rect.classList.remove('is-admin');
-            circle.classList.remove('is-admin');
+            rectTarget.classList.remove('is-admin');
+            circleTarget.classList.remove('is-admin');
         }
     }
 }
 
-// 4. 모달 제어
+// 4. 모달 및 이미지 제어
 function openJoinModal() { document.getElementById('joinModal').style.display = 'block'; }
 function openPostModal() { document.getElementById('postModal').style.display = 'block'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function updateBoardImage(input, targetId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(targetId).src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
 // 5. 게시글 저장 및 출력
 function savePost() {
@@ -106,7 +103,6 @@ function savePost() {
     renderPosts(board);
     closeModal('postModal');
     
-    // 초기화
     document.getElementById('postTitle').value = "";
     document.getElementById('postContent').value = "";
 }
@@ -128,14 +124,14 @@ function renderPosts(boardName) {
     `).join('');
 }
 
-// 창 바깥 클릭 시 모달 또는 사이드 메뉴 닫기 [수정됨]
+// --- 이벤트 리스너 ---
+
+// 창 바깥 클릭 시 닫기 (모달 및 사이드바)
 window.onclick = function(event) {
-    // 1. 모달 닫기
     if (event.target.classList.contains('modal')) {
         event.target.style.display = "none";
     }
     
-    // 2. 사이드 메뉴 바깥 클릭 시 닫기
     const sideMenu = document.getElementById('sideMenu');
     const menuBtn = document.querySelector('.header-left');
     
@@ -143,22 +139,11 @@ window.onclick = function(event) {
         !sideMenu.contains(event.target) && 
         !menuBtn.contains(event.target)) {
         sideMenu.classList.remove('active');
-        if(history.state && history.state.menuOpen) history.back(); // 히스토리 정리
+        if(history.state && history.state.menuOpen) history.back();
     }
 }
 
-// script.js 최하단에 추가
-function updateBoardImage(input, targetId) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById(targetId).src = e.target.result;
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-// 브라우저 뒤로가기 감지 (메뉴 닫기) [신규 추가]
+// 뒤로가기 감지
 window.onpopstate = function(event) {
     const menu = document.getElementById('sideMenu');
     if (menu.classList.contains('active')) {
