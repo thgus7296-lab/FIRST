@@ -3,8 +3,21 @@ let currentUser = null;
 let isLoggedIn = false;
 let users = []; // 회원가입 데이터 임시 저장용
 
-function openModal(id) { document.getElementById(id).style.display = 'block'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openModal(id) {
+    document.getElementById(id).style.display = 'block';
+    // 모달이 열릴 때 브라우저 기록에 '이 모달이 열림' 상태를 저장합니다.
+    history.pushState({ modalOpen: id }, ''); 
+}
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (modal.style.display === 'block') {
+        modal.style.display = 'none';
+        // 사용자가 X나 취소를 눌러 직접 닫았을 때, 생성된 히스토리 기록을 한 단계 뒤로 돌려 정리합니다.
+        if (history.state && history.state.modalOpen === id) {
+            history.back();
+        }
+    }
+}
 
 function handleJoin(event) {
     event.preventDefault();
@@ -125,8 +138,9 @@ function setAdminPrivileges() {
 }
 
 // 4. 모달 및 이미지 제어
-function openJoinModal() { document.getElementById('joinModal').style.display = 'block'; }
-function openPostModal() { document.getElementById('postModal').style.display = 'block'; }
+// openModal을 호출해야 뒤로가기 기록이 남습니다.
+function openJoinModal() { openModal('joinModal'); } 
+function openPostModal() { openModal('postModal'); }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function updateBoardImage(input, targetId) {
@@ -198,18 +212,32 @@ window.onclick = function(event) {
     }
 }
 
-// [수정] 뒤로가기 감지 (상황별 처리)
+// 이 코드로 파일의 맨 마지막 부분을 완전히 덮어씌우세요.
 window.onpopstate = function(event) {
     const menu = document.getElementById('sideMenu');
     const boardView = document.getElementById('boardView');
 
-    // 상황: 메뉴가 열려있으면 메뉴만 닫고 종료
+    // 1순위: 열려있는 모든 모달 닫기
+    const openModals = document.querySelectorAll('.modal');
+    let modalClosed = false;
+
+    openModals.forEach(modal => {
+        if (modal.style.display === 'block') {
+            modal.style.display = 'none';
+            modalClosed = true;
+        }
+    });
+
+    // 모달을 닫았다면 다른 동작(메뉴 닫기, 홈 이동)을 하지 않고 여기서 멈춥니다.
+    if (modalClosed) return; 
+
+    // 2순위: 사이드 메뉴가 열려있으면 메뉴만 닫기
     if (menu.classList.contains('active')) {
         menu.classList.remove('active');
         return; 
     }
 
-    // 상황: 메뉴가 닫혀있고 게시판 뷰라면 홈으로 화면 전환
+    // 3순위: 게시판 화면이라면 홈 화면으로 전환
     if (boardView.style.display === 'block') {
         document.getElementById('homeView').style.display = 'block';
         document.getElementById('boardView').style.display = 'none';
