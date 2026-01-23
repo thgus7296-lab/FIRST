@@ -10,16 +10,17 @@ function openModal(id) {
 }
 function closeModal(id) {
     const modal = document.getElementById(id);
-    if (modal && modal.style.display === 'block') {
-        modal.style.display = 'none'; // 화면에서 확실히 지움
+    if (!modal) return;
+
+    if (modal.style.display === 'block') {
+        modal.style.display = 'none';
         
-        // 브라우저 기록이 모달 상태라면 뒤로가기 실행
+        // 브라우저 뒤로가기가 아니라 직접 X버튼/취소를 눌렀을 때만 실행
         if (history.state && history.state.modalOpen === id) {
             history.back();
         }
     }
 }
-
 function handleJoin(event) {
     event.preventDefault();
     users.push({
@@ -231,29 +232,28 @@ window.onclick = function(event) {
 window.onpopstate = function(event) {
     const menu = document.getElementById('sideMenu');
     const boardView = document.getElementById('boardView');
-
-    // 1순위: 열려있는 모든 모달 닫기
-    const openModals = document.querySelectorAll('.modal');
-    let modalClosed = false;
-
-    openModals.forEach(modal => {
+    
+    // 1순위: 모든 모달을 "무조건" 닫습니다. (더 확실한 선택자 사용)
+    const allModals = document.querySelectorAll('.modal');
+    let modalWasOpen = false;
+    
+    allModals.forEach(modal => {
         if (modal.style.display === 'block') {
             modal.style.display = 'none';
-            modalClosed = true;
+            modalWasOpen = true;
         }
     });
 
-    // 모달을 닫았다면 다른 동작(메뉴 닫기, 홈 이동)을 하지 않고 여기서 멈춥니다.
-    if (modalClosed) return; 
+    if (modalWasOpen) return; 
 
-    // 2순위: 사이드 메뉴가 열려있으면 메뉴만 닫기
-    if (menu.classList.contains('active')) {
+    // 2순위: 사이드 메뉴 닫기
+    if (menu && menu.classList.contains('active')) {
         menu.classList.remove('active');
         return; 
     }
 
     // 3순위: 게시판 화면이라면 홈 화면으로 전환
-    if (boardView.style.display === 'block') {
+    if (boardView && boardView.style.display === 'block') {
         document.getElementById('homeView').style.display = 'block';
         document.getElementById('boardView').style.display = 'none';
     }
