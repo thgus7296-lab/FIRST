@@ -7,13 +7,20 @@ function toggleMenu() {
     const menu = document.getElementById('sideMenu');
     menu.classList.toggle('active');
 
-    // 메뉴가 열렸을 때 뒤로가기 감지를 위한 가상 상태 추가
     if (menu.classList.contains('active')) {
-        history.pushState({ menuOpen: true }, '');
+        history.pushState({ state: 'menu' }, '');
     }
 }
 
+// [수정] 홈으로 갈 때 쌓여있는 게시판 히스토리를 정리하도록 개선
 function goHome() {
+    // 만약 게시판 뷰 상태에서 홈버튼을 누른 거라면 히스토리 한 번 뒤로가기
+    if (document.getElementById('boardView').style.display === 'block') {
+        if (history.state && history.state.view === 'board') {
+            history.back();
+        }
+    }
+    
     document.getElementById('homeView').style.display = 'block';
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('sideMenu').classList.remove('active');
@@ -21,7 +28,6 @@ function goHome() {
 
 // 3. 게시판 로드
 function loadBoard(name) {
-    // 직급별 권한 체크
     if (name === "매니저 라운지" && currentUser.position !== "매니저") {
         alert("매니저 직급만 입장 가능한 게시판입니다.");
         return;
@@ -32,28 +38,27 @@ function loadBoard(name) {
         return;
     }
 
-    // 메뉴가 열린 상태에서 이동 시 히스토리 정리
+    // [수정] 메뉴가 열린 상태에서 게시판을 누르면 메뉴 히스토리만 지우고 진행
     if (document.getElementById('sideMenu').classList.contains('active')) {
         history.back();
     }
-    history.pushState({ view: 'board' }, '');
-    document.getElementById('homeView').style.display = 'none';
-    document.getElementById('boardView').style.display = 'block';
-    document.getElementById('currentBoardTitle').innerText = name;
-    
-    // 대나무 라운지 글쓰기 제한
-    document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
-    
-    setAdminPrivileges();
-    renderPosts(name);
+
+    // 게시판 진입 기록 추가 (비동기 처리를 위해 약간의 시간차를 둠)
+    setTimeout(() => {
+        history.pushState({ view: 'board' }, '');
+        document.getElementById('homeView').style.display = 'none';
+        document.getElementById('boardView').style.display = 'block';
+        document.getElementById('currentBoardTitle').innerText = name;
+        
+        document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
+        
+        setAdminPrivileges();
+        renderPosts(name);
+    }, 10);
 }
 
-// 이미지 수정 권한 UI 제어 (책임 매니저만 가능)
+// 이미지 수정 권한 UI 제어
 function setAdminPrivileges() {
-    const rect = document.getElementById('rectContainer');
-    const circle = document.getElementById('circleContainer');
-    
-    // HTML에 해당 ID들이 있는지 확인 후 클래스 부여
     const rectTarget = document.querySelector('.rect-banner');
     const circleTarget = document.querySelector('.circle-profile');
 
@@ -92,11 +97,8 @@ function savePost() {
     if(!title || !content) return alert("제목과 내용을 모두 입력해주세요.");
 
     const newPost = {
-        board: board,
-        title: title,
-        content: content,
-        author: currentUser.nickname,
-        date: new Date().toLocaleDateString()
+        board: board, title: title, content: content,
+        author: currentUser.nickname, date: new Date().toLocaleDateString()
     };
 
     allPosts.unshift(newPost);
@@ -126,7 +128,7 @@ function renderPosts(boardName) {
 
 // --- 이벤트 리스너 ---
 
-// 창 바깥 클릭 시 닫기 (모달 및 사이드바)
+// [수정] 창 바깥 클릭 시 닫기 로직
 window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
         event.target.style.display = "none";
@@ -135,27 +137,30 @@ window.onclick = function(event) {
     const sideMenu = document.getElementById('sideMenu');
     const menuBtn = document.querySelector('.header-left');
     
+    // 메뉴 바깥 클릭 시
     if (sideMenu.classList.contains('active') && 
         !sideMenu.contains(event.target) && 
         !menuBtn.contains(event.target)) {
-        sideMenu.classList.remove('active');
-        if(history.state && history.state.menuOpen) history.back();
+        
+        // 중요: 이 시점에서 goHome()을 부르는 것이 아니라 메뉴만 닫아야 함
+        history.back(); // history.back()이 실행되면서 아래 window.onpopstate가 호출되어 메뉴를 닫음
     }
 }
 
-// 파일의 가장 마지막 부분
+// [수정] 뒤로가기 감지 (상황별 처리)
 window.onpopstate = function(event) {
     const menu = document.getElementById('sideMenu');
     const boardView = document.getElementById('boardView');
 
-    // 1. 메뉴가 열려있으면 메뉴만 닫기
+    // 상황: 메뉴가 열려있으면 메뉴만 닫고 종료
     if (menu.classList.contains('active')) {
         menu.classList.remove('active');
         return; 
     }
 
-    // 2. 게시판 화면이면 홈으로 이동
+    // 상황: 메뉴가 닫혀있고 게시판 뷰라면 홈으로 화면 전환
     if (boardView.style.display === 'block') {
-        goHome();
+        document.getElementById('homeView').style.display = 'block';
+        document.getElementById('boardView').style.display = 'none';
     }
 };
