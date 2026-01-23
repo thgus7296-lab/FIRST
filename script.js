@@ -7,9 +7,22 @@ let users = []; // 회원가입 데이터 임시 저장용
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
+        // 1. 먼저 모달을 화면에 표시합니다.
         modal.style.display = 'block';
-        modal.classList.add('active');
-        // 브라우저 뒤로가기 버튼과 연동하기 위해 상태 저장
+        
+        // 2. 브라우저가 모달의 위치를 계산할 시간을 준 후(0.1초), 실행합니다.
+        setTimeout(() => {
+            modal.classList.add('active');
+            
+            // 3. 회원가입 모달일 경우, 첫 번째 입력창에 강제로 포커스를 줍니다.
+            if (id === 'joinModal') {
+                const firstInput = document.getElementById('joinName');
+                if (firstInput) {
+                    firstInput.focus(); // 커서를 활성화하여 자판을 호출합니다.
+                }
+            }
+        }, 100);
+        
         history.pushState({ modalOpen: id }, ''); 
     }
 }
@@ -211,30 +224,32 @@ function renderPosts(boardName) {
 // --- 이벤트 리스너 ---
 
 // [수정] 창 바깥 클릭 시 닫기 로직
-window.onclick = function(event) {
-    // [개선 핵심] 클릭된 지점이 회원가입/로그인 박스(.modal-content) 내부라면
-    // 자바스크립트의 추가 계산 없이 즉시 함수를 종료합니다.
-    // 이를 통해 브라우저가 '입력'에만 모든 자원을 집중하게 합니다.
+// window.onclick 대신 더 강력한 이벤트 리스너를 사용합니다.
+// 마지막에 붙은 'true'는 이 코드가 다른 어떤 코드보다 먼저 실행되게 보장합니다.
+window.addEventListener('click', function(event) {
+    // 1. 만약 클릭된 곳이 흰색 모달 박스(.modal-content) 내부라면?
     if (event.target.closest('.modal-content')) {
+        // 아무것도 하지 말고 여기서 멈춥니다. 
+        // 브라우저가 오직 '입력창 터치'에만 집중하도록 이벤트를 보호합니다.
         return; 
     }
 
-    // 모달 배경(검은 영역)을 터치했을 때만 모달을 닫는 로직 수행
+    // 2. 모달의 어두운 배경을 터치했을 때만 닫기 로직을 실행합니다.
     if (event.target.classList.contains('modal')) {
         closeModal(event.target.id);
         return;
     }
 
+    // 3. 사이드 메뉴 바깥 클릭 로직
     const sideMenu = document.getElementById('sideMenu');
     const menuBtn = document.querySelector('.header-left');
     
-    // 메뉴 바깥 클릭 로직
     if (sideMenu && sideMenu.classList.contains('active') && 
         !sideMenu.contains(event.target) && 
         !menuBtn.contains(event.target)) {
         history.back();
     }
-}
+}, true); // 이 true 값이 터치 간섭을 막는 핵심 열쇠입니다.
 
 // 이 코드로 파일의 맨 마지막 부분을 완전히 덮어씌우세요.
 window.onpopstate = function(event) {
