@@ -3,20 +3,24 @@ let currentUser = null;
 let isLoggedIn = false;
 let users = []; // 회원가입 데이터 임시 저장용
 
+// 모달 열기: 상태값과 클래스를 동시에 제어하여 터치 문제를 방지합니다.
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
-        modal.classList.add('active'); // CSS active 클래스 추가
         modal.style.display = 'block';
+        modal.classList.add('active');
+        // 브라우저 뒤로가기 버튼과 연동하기 위해 상태 저장
         history.pushState({ modalOpen: id }, ''); 
     }
 }
 
+// 모달 닫기: 모든 상태를 초기화하고 뒤로가기 이벤트를 정리합니다.
 function closeModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
-        modal.classList.remove('active'); // CSS active 클래스 제거
         modal.style.display = 'none';
+        modal.classList.remove('active');
+        // 사용자가 X버튼이나 취소버튼을 직접 눌렀을 때만 히스토리를 한 칸 뒤로 돌림
         if (history.state && history.state.modalOpen === id) {
             history.back();
         }
@@ -155,7 +159,6 @@ function setAdminPrivileges() {
 // openModal을 호출해야 뒤로가기 기록이 남습니다.
 function openJoinModal() { openModal('joinModal'); } 
 function openPostModal() { openModal('postModal'); }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function updateBoardImage(input, targetId) {
     if (input.files && input.files[0]) {
