@@ -4,22 +4,25 @@ let isLoggedIn = false;
 let users = []; // 회원가입 데이터 임시 저장용
 
 function openModal(id) {
-    document.getElementById(id).style.display = 'block';
-    // 모달이 열릴 때 브라우저 기록에 '이 모달이 열림' 상태를 저장합니다.
-    history.pushState({ modalOpen: id }, ''); 
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.add('active'); // CSS active 클래스 추가
+        modal.style.display = 'block';
+        history.pushState({ modalOpen: id }, ''); 
+    }
 }
+
 function closeModal(id) {
     const modal = document.getElementById(id);
-    if (!modal) return; // 모달이 없으면 종료
-
-    if (modal.style.display === 'block') {
+    if (modal) {
+        modal.classList.remove('active'); // CSS active 클래스 제거
         modal.style.display = 'none';
-        // 직접 닫았을 때만 히스토리를 뒤로 돌림 (중복 실행 방지)
         if (history.state && history.state.modalOpen === id) {
             history.back();
         }
     }
 }
+
 function handleJoin(event) {
     event.preventDefault();
     users.push({
@@ -229,12 +232,13 @@ window.onpopstate = function(event) {
     const menu = document.getElementById('sideMenu');
     const boardView = document.getElementById('boardView');
     
-    // 1순위: 모든 모달을 "무조건" 닫습니다. (더 확실한 선택자 사용)
+    // 뒤로가기 시 모든 모달 강제 초기화
     const allModals = document.querySelectorAll('.modal');
     let modalWasOpen = false;
     
     allModals.forEach(modal => {
-        if (modal.style.display === 'block') {
+        if (modal.classList.contains('active') || modal.style.display === 'block') {
+            modal.classList.remove('active');
             modal.style.display = 'none';
             modalWasOpen = true;
         }
@@ -242,13 +246,11 @@ window.onpopstate = function(event) {
 
     if (modalWasOpen) return; 
 
-    // 2순위: 사이드 메뉴 닫기
     if (menu && menu.classList.contains('active')) {
         menu.classList.remove('active');
         return; 
     }
 
-    // 3순위: 게시판 화면이라면 홈 화면으로 전환
     if (boardView && boardView.style.display === 'block') {
         document.getElementById('homeView').style.display = 'block';
         document.getElementById('boardView').style.display = 'none';
