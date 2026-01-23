@@ -212,12 +212,14 @@ function renderPosts(boardName) {
 
 // [수정] 창 바깥 클릭 시 닫기 로직
 window.onclick = function(event) {
-    // 1. 클릭된 요소가 input, textarea, select라면 즉시 함수 종료 (입력 방해 방지)
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) {
-        return;
+    // [개선 핵심] 클릭된 지점이 회원가입/로그인 박스(.modal-content) 내부라면
+    // 자바스크립트의 추가 계산 없이 즉시 함수를 종료합니다.
+    // 이를 통해 브라우저가 '입력'에만 모든 자원을 집중하게 합니다.
+    if (event.target.closest('.modal-content')) {
+        return; 
     }
 
-    // 2. 모달 바깥(배경) 클릭 시에만 닫기
+    // 모달 배경(검은 영역)을 터치했을 때만 모달을 닫는 로직 수행
     if (event.target.classList.contains('modal')) {
         closeModal(event.target.id);
         return;
@@ -225,8 +227,8 @@ window.onclick = function(event) {
 
     const sideMenu = document.getElementById('sideMenu');
     const menuBtn = document.querySelector('.header-left');
-
-    // 3. 메뉴 바깥 클릭 시 (메뉴가 활성화된 상태에서만)
+    
+    // 메뉴 바깥 클릭 로직
     if (sideMenu && sideMenu.classList.contains('active') && 
         !sideMenu.contains(event.target) && 
         !menuBtn.contains(event.target)) {
