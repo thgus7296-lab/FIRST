@@ -36,14 +36,20 @@ function handleLogin() {
     const pw = document.getElementById('loginPw').value;
 
     if (empId === "1" && pw === "1") {
-        successLogin({ empId: "1", position: "책임 매니저", name: "관리자" });
-    } else if (empId === "2" && pw === "2") {
-        successLogin({ empId: "2", position: "매니저", name: "사용자" });
-    } else {
-        const user = users.find(u => u.empId === empId && u.pw === pw);
-        if (user) successLogin(user);
-        else alert("정보를 확인해주세요");
-    }
+    // 사번 1: 관리자 (모든 권한을 가진 특수 직급으로 설정 가능)
+    successLogin({ empId: "1", position: "관리자", name: "관리자", role: "" });
+} else if (empId === "2" && pw === "2") {
+    // 사번 2: 책임 매니저
+    successLogin({ empId: "2", position: "책임 매니저", name: "책임", role: "" });
+} else if (empId === "3" && pw === "3") {
+    // 사번 3: 매니저
+    successLogin({ empId: "3", position: "매니저", name: "매니저", role: "" });
+} else {
+    // 일반 가입자 로직 유지
+    const user = users.find(u => u.empId === empId && u.pw === pw);
+    if (user) successLogin(user);
+    else alert("정보를 확인해주세요");
+}
 }
 
 function successLogin(user) {
@@ -52,7 +58,10 @@ function successLogin(user) {
     document.getElementById('loginIcons').style.display = 'none';
     document.getElementById('userInfoIcon').style.display = 'inline';
     closeModal('loginModal');
-    alert(`${user.name}님 환영합니다!`);
+
+    // 이름 뒤에 직책(role)이 있으면 붙여서 출력하고, 없으면 이름만 출력합니다.
+    const displayName = user.role ? `${user.name} ${user.role}` : `${user.name}`;
+    alert(`${displayName}님 환영합니다!`);
 }
 
 function showUserInfo() {
@@ -91,6 +100,10 @@ function loadBoard(name) {
         alert("로그인을 해주세요");
         return; // 로그인이 안 되어 있으면 여기서 함수를 강제 종료합니다.
     }
+
+    // [추가] 관리자 직급은 모든 권한 체크를 무시하고 입장
+    if (currentUser.position === "관리자") {
+        // 권한 체크 패스
     
     if (name === "매니저 라운지" && currentUser.position !== "매니저") {
         alert("매니저 직급만 입장 가능한 게시판입니다.");
