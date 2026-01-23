@@ -48,19 +48,24 @@ header {
 .main-banner { height: calc(100vh - 210px); }
 
 /* 모달창 중앙 정렬 */
+/* 모달 기본 상태: 물리적으로 터치를 차단하지 않도록 수정 */
 .modal { 
     display: none; 
     position: fixed; 
-    z-index: 1000; 
+    z-index: 9999; /* 매우 높게 설정 */
     left: 0; 
     top: 0; 
     width: 100%; 
     height: 100%; 
     background: rgba(0,0,0,0.6); 
-    /* 추가: 평소에는 터치 이벤트를 통과시킴 */
-    pointer-events: none; 
+    pointer-events: none; /* 기본은 터치 통과 */
 }
 
+/* 모달이 열렸을 때만 터치를 받음 */
+.modal.active {
+    display: block;
+    pointer-events: auto;
+}
 /* 추가: 화면에 보일 때만 터치를 가로챔 */
 .modal[style*="display: block"] {
     pointer-events: auto;
