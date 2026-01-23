@@ -95,41 +95,38 @@ function goHome() {
 
 // 3. 게시판 로드
 function loadBoard(name) {
-
-    // [이 위치에 추가] 로그인 여부를 가장 먼저 확인합니다.
+    // 1. 로그인 체크
     if (!isLoggedIn) { 
         alert("로그인을 해주세요");
-        return; // 로그인이 안 되어 있으면 여기서 함수를 강제 종료합니다.
+        return; 
     }
 
-    // [추가] 관리자 직급은 모든 권한 체크를 무시하고 입장
-    if (currentUser.position === "관리자") {
-        // 권한 체크 패스
-    
-    if (name === "매니저 라운지" && currentUser.position !== "매니저") {
-        alert("매니저 직급만 입장 가능한 게시판입니다.");
-        return;
+    // 2. 권한 체크 (관리자는 통과, 나머지는 직급 확인)
+    if (currentUser.position !== "관리자") {
+        if (name === "매니저 라운지" && currentUser.position !== "매니저") {
+            alert("매니저 직급만 입장 가능한 게시판입니다.");
+            return;
+        }
+        if (name === "책임 라운지" && currentUser.position !== "책임 매니저") {
+            alert("책임 매니저 직급만 입장 가능한 게시판입니다.");
+            return;
+        }
     }
 
-    if (name === "책임 라운지" && currentUser.position !== "책임 매니저") {
-        alert("책임 매니저 직급만 입장 가능한 게시판입니다.");
-        return;
-    }
-
-    // [수정] 메뉴가 열린 상태에서 게시판을 누르면 메뉴 히스토리만 지우고 진행
+    // 3. 메뉴가 열려 있으면 닫기
     if (document.getElementById('sideMenu').classList.contains('active')) {
         history.back();
     }
 
-    // 게시판 진입 기록 추가 (비동기 처리를 위해 약간의 시간차를 둠)
+    // 4. 화면 전환
     setTimeout(() => {
         history.pushState({ view: 'board' }, '');
         document.getElementById('homeView').style.display = 'none';
         document.getElementById('boardView').style.display = 'block';
         document.getElementById('currentBoardTitle').innerText = name;
-        
+
         document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
-        
+
         setAdminPrivileges();
         renderPosts(name);
     }, 10);
