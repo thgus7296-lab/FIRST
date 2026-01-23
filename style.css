@@ -88,8 +88,13 @@ header {
 
 /* 추가: 모바일에서 입력 시 줌 현상 및 지연 방지 */
 .modal-content input, .modal-content select, .modal-content textarea {
-    font-size: 16px; /* 아이폰 등에서 자동 줌 방지 */
-    touch-action: manipulation; /* 터치 지연 시간 제거 */
+    font-size: 16px;
+    /* touch-action: manipulation은 더블탭 줌을 방지하여 클릭 반응을 빠르게 합니다. */
+    touch-action: manipulation; 
+    /* pointer-events: auto는 이 요소가 터치를 즉시 수신함을 보장합니다. */
+    pointer-events: auto; 
+    /* 모바일 환경에서 터치 시 생기는 파란색 하이라이트 제거 (반응 속도 체감 향상) */
+    -webkit-tap-highlight-color: transparent; 
 }
 
 /* 게시글 아이템 스타일 */
