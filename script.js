@@ -209,21 +209,25 @@ function renderPosts(boardName) {
 
 // [수정] 창 바깥 클릭 시 닫기 로직
 window.onclick = function(event) {
-    // 1. 모달 바깥 클릭 시 닫기
-    if (event.target.classList.contains('modal')) {
-        closeModal(event.target.id); // 직접 id를 전달하여 히스토리까지 정리
+    // 1. 클릭된 요소가 input, textarea, select라면 즉시 함수 종료 (입력 방해 방지)
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) {
         return;
     }
-    
+
+    // 2. 모달 바깥(배경) 클릭 시에만 닫기
+    if (event.target.classList.contains('modal')) {
+        closeModal(event.target.id);
+        return;
+    }
+
     const sideMenu = document.getElementById('sideMenu');
     const menuBtn = document.querySelector('.header-left');
-    
-    // 2. 메뉴 바깥 클릭 시 (메뉴가 활성화된 상태에서만 작동하도록)
-    if (sideMenu.classList.contains('active') && 
+
+    // 3. 메뉴 바깥 클릭 시 (메뉴가 활성화된 상태에서만)
+    if (sideMenu && sideMenu.classList.contains('active') && 
         !sideMenu.contains(event.target) && 
         !menuBtn.contains(event.target)) {
-        
-        history.back(); // onpopstate가 호출되면서 메뉴를 닫음
+        history.back();
     }
 }
 
