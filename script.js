@@ -36,7 +36,7 @@ function loadBoard(name) {
     if (document.getElementById('sideMenu').classList.contains('active')) {
         history.back();
     }
-
+    history.pushState({ view: 'board' }, '');
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('currentBoardTitle').innerText = name;
@@ -143,10 +143,19 @@ window.onclick = function(event) {
     }
 }
 
-// 뒤로가기 감지
+// 파일의 가장 마지막 부분
 window.onpopstate = function(event) {
     const menu = document.getElementById('sideMenu');
+    const boardView = document.getElementById('boardView');
+
+    // 1. 메뉴가 열려있으면 메뉴만 닫기
     if (menu.classList.contains('active')) {
         menu.classList.remove('active');
+        return; 
+    }
+
+    // 2. 게시판 화면이면 홈으로 이동
+    if (boardView.style.display === 'block') {
+        goHome();
     }
 };
