@@ -1,87 +1,44 @@
 /* [개선 1] 입력 방해 요소 제거 */
-
 .modal-content input, .modal-content select, .modal-content textarea { 
-
     width: 100%; 
-
     padding: 12px; 
-
     margin: 8px 0; 
-
     border: 1px solid #ddd; 
-
     border-radius: 5px; 
-
     font-size: 16px;
-
     /* touch-action: none; 삭제 - 입력 차단 원인 */
-
     /* user-select: auto; 삭제 - 시스템 기본값 권장 */
-
 }
-
-
 
 /* [개선 2] 빨간 하트 스타일 */
-
 .fa-heart.liked {
-
     color: #e74c3c !important; /* 내부 색상 */
-
 }
-
-
 
 /* [개선 3] 게시글 레이아웃 유지 및 정렬 */
-
 .post-item { padding: 15px; border-bottom: 1px solid #f0f0f0; background: #fff; }
-
 .post-user-info { display: flex; align-items: center; margin-bottom: 8px; gap: 10px; }
-
 .nickname { font-weight: bold; font-size: 14px; color: #333; }
-
 .post-date { color: #aaa; font-size: 12px; }
-
 .post-title { font-size: 16px; margin-bottom: 5px; color: #222; }
-
 .post-summary { font-size: 14px; color: #666; line-height: 1.4; margin-bottom: 10px; }
-
 .post-stats { display: flex; gap: 15px; color: #888; font-size: 14px; }
-
 .post-stats i { cursor: pointer; transition: transform 0.2s; }
 
-
-
 .board-header { 
-
     display: flex; 
-
     justify-content: space-between; 
-
     align-items: center; 
-
     padding: 15px 20px; 
-
     border-bottom: 1px solid #eee; 
-
 }
 
-
-
 /* 기존 스타일 유지... */
-
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
-
 .main-btn { background: #065d7a; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-
 header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #ddd; background: #fff; position: sticky; top: 0; }
-
 .side-menu { position: fixed; left: -250px; top: 0; width: 250px; height: 100%; background: #fff; transition: 0.3s; z-index: 200; padding: 20px; }
-
 .side-menu.active { left: 0; }
-
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
-
 .modal.active { display: block; }
-
 .modal-content { background: white; margin: 15vh auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; }
