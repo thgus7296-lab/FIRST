@@ -8,14 +8,24 @@ let allPosts = [];
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
+        // [수정] 다시 열 때 기존 입력 내용 초기화
+        if (id === 'joinModal') {
+            const form = document.getElementById('joinForm');
+            if (form) form.reset();
+        }
+
         modal.style.display = 'block';
         setTimeout(() => {
             modal.classList.add('active');
+            // [수정] 이름 항목 입력 안되는 문제 개선 (포커스 타이밍 조정 및 클릭 강제)
             if (id === 'joinModal') {
                 const firstInput = document.getElementById('joinName');
-                if (firstInput) firstInput.focus();
+                if (firstInput) {
+                    firstInput.focus();
+                    firstInput.click(); 
+                }
             }
-        }, 100);
+        }, 150); // 모달 애니메이션 대기 시간 소폭 증가
         history.pushState({ modalOpen: id }, ''); 
     }
 }
@@ -37,6 +47,7 @@ function handleJoin(event) {
     users.push({
         name: document.getElementById('joinName').value,
         empId: document.getElementById('joinEmpId').value,
+        rank: document.getElementById('joinRank').value, // [수정] 직급 데이터 추가
         pw: document.getElementById('joinPw').value,
         position: document.getElementById('joinPosition').value
     });
@@ -116,7 +127,6 @@ function openPostModal() {
     openModal('postModal');
 }
 
-// [수정 1] 게시글 등록 후 현재 게시판 유지
 function savePost() {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
@@ -134,36 +144,28 @@ function savePost() {
         content: content,
         author: currentUser.nickname,
         timestamp: new Date(),
-        likes: 0,
+        likedBy: [], // [수정] 하트 누른 계정들의 ID 리스트 저장
         comments: 0,
         views: 1
     };
 
     allPosts.unshift(newPost);
-    renderPosts(board); // 현재 게시판 리스트 갱신
-    closeModal('postModal'); // 모달만 닫음 (홈 이동 없음)
+    renderPosts(board); 
+    closeModal('postModal'); 
 }
 
-// [수정 2-2] 시간 표기 형식 변경 (24시간 기준)
 function timeSince(date) {
     const seconds = Math.floor((new Date() - date) / 1000);
-    
-    // 24시간(86400초) 초과 시 '일'로 표기
     let interval = seconds / 86400;
     if (interval >= 1) return Math.floor(interval) + "일";
-    
-    // 1시간(3600초) 이상 시 '시간'으로 표기
     interval = seconds / 3600;
     if (interval >= 1) return Math.floor(interval) + "시간";
-    
-    // 1분(60초) 이상 시 '분'으로 표기
     interval = seconds / 60;
     if (interval >= 1) return Math.floor(interval) + "분";
-    
     return "방금 전";
 }
 
-// [수정 2-1] 게시글 목록 표출 레이아웃 변경
+// [수정] 게시글 목록 렌더링 로직 개선
 function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     const filtered = allPosts.filter(p => p.board === boardName);
@@ -173,28 +175,50 @@ function renderPosts(boardName) {
         return;
     }
 
-    listDiv.innerHTML = filtered.map(p => `
-        <div class="post-item" onclick="incrementView(${p.id})">
-            <div class="post-user-info">
-                <span class="nickname">${p.author}</span>
-                <span class="post-date">${timeSince(p.timestamp)}</span>
+    listDiv.innerHTML = filtered.map(p => {
+        // [개선 사항 3-3] 첫 번째 줄 10자만 표기
+        const firstLine = p.content.split('\n')[0];
+        const summary = firstLine.length > 10 ? firstLine.substring(0, 10) + "..." : firstLine;
+
+        // [개선 사항 3-2] 내 계정이 눌렀는지 확인 (홀수번 클릭 상태)
+        const isLikedByMe = currentUser && p.likedBy.includes(currentUser.empId);
+        const heartIcon = isLikedByMe ? 'fas fa-heart liked' : 'far fa-heart';
+
+        return `
+            <div class="post-item" onclick="incrementView(${p.id})">
+                <div class="post-user-info">
+                    <span class="nickname">${p.author}</span>
+                    <span class="post-date">${timeSince(p.timestamp)}</span>
+                </div>
+                <h4 class="post-title">${p.title}</h4>
+                <p class="post-summary">${summary}</p>
+                <div class="post-stats">
+                    <span onclick="event.stopPropagation(); toggleLike(${p.id})" style="cursor:pointer;">
+                        <i class="${heartIcon}"></i> 
+                        <small>${p.likedBy.length}</small>
+                    </span>
+                    <span><i class="far fa-comment"></i> <small>${p.comments}</small></span>
+                    <span><i class="far fa-eye"></i> <small>${p.views}</small></span>
+                </div>
             </div>
-            <h4 class="post-title">${p.title}</h4>
-            <p class="post-summary">${p.content.substring(0, 50)}...</p>
-            <div class="post-stats">
-                <span><i class="far fa-heart" onclick="event.stopPropagation(); toggleLike(${p.id})"></i> <small id="like-${p.id}">${p.likes}</small></span>
-                <span><i class="far fa-comment"></i> <small>${p.comments}</small></span>
-                <span><i class="far fa-eye"></i> <small>${p.views}</small></span>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
+// [수정] 계정별 고유 좋아요 처리 로직
 function toggleLike(id) {
+    if (!currentUser) return;
     const post = allPosts.find(p => p.id === id);
     if(post) {
-        post.likes++;
-        document.getElementById(`like-${id}`).innerText = post.likes;
+        const userIdx = post.likedBy.indexOf(currentUser.empId);
+        if (userIdx === -1) {
+            // 홀수번 누름: 추가 (카운트 1)
+            post.likedBy.push(currentUser.empId);
+        } else {
+            // 짝수번 누름: 제거 (카운트 0)
+            post.likedBy.splice(userIdx, 1);
+        }
+        renderPosts(post.board);
     }
 }
 
