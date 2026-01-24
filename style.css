@@ -5,18 +5,24 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .side-menu.active { left: 0; }
 .side-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; list-style: none; }
 
-/* 모달 및 입력창 */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); -webkit-overflow-scrolling: touch; }
 .modal.active { display: block; }
 .modal-content { background: white; margin: 15vh auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; position: relative; z-index: 1001; }
 
-/* [수정] 자판 입력 오류 개선: touch-action을 auto로 변경 */
 .modal-content input, .modal-content select, .modal-content textarea { 
     width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; 
     font-size: 16px; touch-action: auto; user-select: auto; -webkit-tap-highlight-color: transparent; 
 }
 
-/* 게시글 아이템 상세 디자인 */
+.join-warning {
+    color: #ff0000;
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 15px;
+    line-height: 1.4;
+    word-break: keep-all;
+}
+
 .post-item { padding: 15px; border-bottom: 1px solid #f0f0f0; background: #fff; }
 .post-user-info { display: flex; align-items: center; margin-bottom: 8px; gap: 10px; }
 .nickname { font-weight: bold; font-size: 14px; color: #333; }
@@ -26,12 +32,10 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .post-stats { display: flex; gap: 15px; color: #888; font-size: 14px; }
 .post-stats i { margin-right: 3px; cursor: pointer; }
 
-/* [수정] 하트 색상 변경 (빨간색 내부 및 테두리) */
 .fa-heart.liked {
     color: #ff0000 !important;
 }
 
-/* 게시판 비주얼 영역 */
 .board-visual-area { position: relative; width: 100%; margin-bottom: 40px; }
 .rect-banner { width: 100%; height: 160px; overflow: hidden; background: #eee; }
 .rect-banner img { width: 100%; height: 100%; object-fit: cover; }
