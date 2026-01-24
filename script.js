@@ -171,7 +171,17 @@ function setAdminPrivileges() {
 // 4. 모달 및 이미지 제어
 // openModal을 호출해야 뒤로가기 기록이 남습니다.
 function openJoinModal() { openModal('joinModal'); } 
-function openPostModal() { openModal('postModal'); }
+function openPostModal() {
+    // [중요] 모달을 띄우기 전에 이전 작성 내용을 모두 삭제
+    const titleInput = document.getElementById('postTitle');
+    const contentInput = document.getElementById('postContent');
+    
+    if (titleInput) titleInput.value = "";
+    if (contentInput) contentInput.value = "";
+
+    // 내용이 비워진 상태에서 모달 오픈
+    openModal('postModal');
+}
 
 function updateBoardImage(input, targetId) {
     if (input.files && input.files[0]) {
@@ -185,23 +195,41 @@ function updateBoardImage(input, targetId) {
 
 // 5. 게시글 저장 및 출력
 function savePost() {
-    const title = document.getElementById('postTitle').value;
-    const content = document.getElementById('postContent').value;
+    const titleInput = document.getElementById('postTitle');
+    const contentInput = document.getElementById('postContent');
     const board = document.getElementById('currentBoardTitle').innerText;
 
-    if(!title || !content) return alert("제목과 내용을 모두 입력해주세요.");
+    const title = titleInput.value.trim();
+    const content = contentInput.value.trim();
 
+    // 1. 입력 검증: 제목 혹은 내용이 비어있으면 팝업 표출
+    if (!title || !content) {
+        alert("제목 혹은 글을 입력해주세요");
+        return;
+    }
+
+    // 2. 게시글 객체 생성 (사용자 닉네임 정보 포함)
     const newPost = {
-        board: board, title: title, content: content,
-        author: currentUser.nickname, date: new Date().toLocaleDateString()
+        board: board,
+        title: title,
+        content: content,
+        author: currentUser ? (currentUser.nickname || currentUser.name) : "익명",
+        date: new Date().toLocaleDateString()
     };
 
+    // 3. 전역 게시글 배열에 추가 (배열이 없으면 생성)
+    if (typeof allPosts === 'undefined') window.allPosts = [];
     allPosts.unshift(newPost);
+
+    // 4. 화면 업데이트 및 모달 닫기
     renderPosts(board);
+    
+    // 5. [중요] 성공적으로 등록되었으므로 모달 닫기 실행
     closeModal('postModal');
     
-    document.getElementById('postTitle').value = "";
-    document.getElementById('postContent').value = "";
+    // 6. 다음 작성을 위해 입력필드 초기화
+    titleInput.value = "";
+    contentInput.value = "";
 }
 
 function renderPosts(boardName) {
