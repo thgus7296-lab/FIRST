@@ -28,27 +28,64 @@
                 <li onclick="loadBoard('경제 라운지')">경제 라운지</li>
                 <li onclick="loadBoard('책임 라운지')">책임 라운지</li>
                 <li onclick="loadBoard('매니저 라운지')">매니저 라운지</li>
+                <li onclick="loadBoard('취미 라운지')">취미 라운지</li>
+                <li onclick="loadBoard('대나무 라운지')">대나무 라운지</li>
             </ul>
         </div>
     </nav>
 
     <main id="mainContent">
         <div id="homeView">
-            <div style="height:200px; background:#f0f4f7; display:flex; justify-content:center; align-items:center; color:#666;">환영 배너 영역</div>
+            <div class="image-placeholder" style="height:100px; background:#065d7a; color:#fff; display:flex; justify-content:center; align-items:center;">상단 배너 영역</div>
+            <div style="height:60px;"></div>
+            <div class="image-placeholder" style="height:300px; background:#eee; display:flex; justify-content:center; align-items:center;">메인 콘텐츠 영역</div>
         </div>
 
         <div id="boardView" style="display: none;">
+            <div class="board-visual-area">
+                <div class="rect-banner"><img id="bgDisplay" src="https://via.placeholder.com/800x200" alt="배경"></div>
+                <div class="circle-profile"><img id="profileDisplay" src="https://via.placeholder.com/100x100" alt="프로필"></div>
+            </div>
             <div class="board-header">
-                <h2 id="currentBoardTitle">라운지</h2>
+                <h2 id="currentBoardTitle">게시판 이름</h2>
                 <button id="writeBtn" class="main-btn" onclick="openPostModal()">글쓰기</button>
             </div>
-            <div id="postList"></div>
+            <div id="postList" class="post-list"></div>
         </div>
     </main>
 
+    <div id="joinModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('joinModal')">&times;</span>
+            <h2>회원가입</h2>
+            <form id="joinForm" onsubmit="handleJoin(event)">
+                <input type="text" id="joinName" placeholder="이름" required inputmode="text">
+                <input type="text" id="joinEmpId" placeholder="사번" required inputmode="numeric">
+                <input type="password" id="joinPw" placeholder="비밀번호" required>
+                <select id="joinPosition">
+                    <option value="매니저">매니저</option>
+                    <option value="책임 매니저">책임 매니저</option>
+                </select>
+                <button type="submit" class="main-btn" style="width:100%; margin-top:10px;">가입하기</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>로그인</h2>
+            <input type="text" id="loginEmpId" placeholder="사번" inputmode="numeric">
+            <input type="password" id="loginPw" placeholder="비밀번호">
+            <div style="display:flex; justify-content:space-between; margin-top:15px;">
+                <button class="main-btn" style="background:#888;" onclick="closeModal('loginModal')">취소</button>
+                <button class="main-btn" onclick="handleLogin()">로그인</button>
+            </div>
+        </div>
+    </div>
+
     <div id="postModal" class="modal">
         <div class="modal-content">
-            <span style="float:right; cursor:pointer;" onclick="closeModal('postModal')">&times;</span>
+            <span class="close" onclick="closeModal('postModal')">&times;</span>
             <h2>새 글 작성</h2>
             <input type="text" id="postTitle" placeholder="제목을 입력하세요">
             <textarea id="postContent" placeholder="내용을 입력하세요" rows="8"></textarea>
