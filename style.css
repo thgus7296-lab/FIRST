@@ -1,155 +1,33 @@
-/* style.css */
+/* 상단 기존 스타일 유지 */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
-
-.main-btn {
-    background: #065d7a;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-/* 헤더 고정 */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #ddd;
-    background: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-/* 사이드 메뉴 애니메이션 */
-.side-menu {
-    position: fixed;
-    left: -250px;
-    top: 0;
-    width: 250px;
-    height: 100%;
-    background: #fff;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    transition: 0.3s;
-    z-index: 200;
-    padding: 20px;
-}
+.main-btn { background: #065d7a; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #ddd; background: #fff; position: sticky; top: 0; z-index: 100; }
+.side-menu { position: fixed; left: -250px; top: 0; width: 250px; height: 100%; background: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: 0.3s; z-index: 200; padding: 20px; }
 .side-menu.active { left: 0; }
 .side-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; list-style: none; }
-.side-menu li:hover { color: #065d7a; font-weight: bold; }
 
-/* 메인 이미지 영역 */
-.image-placeholder { background-color: #065d7a; color: white; display: flex; justify-content: center; align-items: center; width: 100%; }
-.top-banner { height: 100px; }
-.content-gap { height: 60px; }
-.main-banner { height: calc(100vh - 210px); }
+/* 모달 및 입력창 (터치 최적화 포함) */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); -webkit-overflow-scrolling: touch; }
+.modal.active { display: block; }
+.modal-content { background: white; margin: 15vh auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; position: relative; z-index: 1001; }
+.modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; touch-action: none; user-select: auto; -webkit-tap-highlight-color: transparent; }
 
-/* 모달창 중앙 정렬 */
-/* 모달 배경 설정 */
-.modal { 
-    display: none; 
-    position: fixed; 
-    z-index: 1000; 
-    left: 0; 
-    top: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: rgba(0,0,0,0.6);
-    /* 모바일에서 배경 터치 시 밀림 방지 */
-    -webkit-overflow-scrolling: touch;
-}
+/* [추가] 게시글 아이템 상세 디자인 (이미지 반영) */
+.post-item { padding: 15px; border-bottom: 1px solid #f0f0f0; background: #fff; }
+.post-user-info { display: flex; align-items: center; margin-bottom: 10px; }
+.user-thumb { font-size: 30px; color: #333; margin-right: 10px; }
+.nickname { font-weight: bold; font-size: 14px; margin-right: 8px; }
+.post-date { color: #aaa; font-size: 12px; }
+.post-title { font-size: 16px; margin-bottom: 5px; color: #222; }
+.post-summary { font-size: 14px; color: #666; line-height: 1.4; margin-bottom: 10px; }
+.post-stats { display: flex; gap: 15px; color: #888; font-size: 14px; }
+.post-stats i { margin-right: 3px; cursor: pointer; }
+.post-stats i:active { transform: scale(1.2); color: #e74c3c; }
 
-/* 모달 활성화 시 */
-.modal.active, .modal[style*="display: block"] {
-    display: block;
-}
-
-/* 모달 흰색 박스 설정 */
-.modal-content { 
-    background: white; 
-    margin: 15vh auto;
-    padding: 25px; 
-    width: 90%; 
-    max-width: 400px; 
-    border-radius: 12px;
-    position: relative;
-    z-index: 1001; 
-}
-
-/* 입력창 반응성 극대화 (핵심 수정) */
-.modal-content input, .modal-content select, .modal-content textarea { 
-    width: 100%; 
-    padding: 12px; 
-    margin: 8px 0; 
-    border: 1px solid #ddd; 
-    border-radius: 5px; 
-    font-size: 16px; 
-    /* 브라우저가 터치 계산을 건너뛰고 즉시 입력창에 전달하도록 함 */
-    touch-action: none; 
-    user-select: auto; 
-    -webkit-user-select: auto;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* 추가: 모바일에서 입력 시 줌 현상 및 지연 방지 */
-.modal-content input, .modal-content select, .modal-content textarea {
-    font-size: 16px;
-    /* touch-action: manipulation은 더블탭 줌을 방지하여 클릭 반응을 빠르게 합니다. */
-    touch-action: manipulation; 
-    /* pointer-events: auto는 이 요소가 터치를 즉시 수신함을 보장합니다. */
-    pointer-events: auto; 
-    /* 모바일 환경에서 터치 시 생기는 파란색 하이라이트 제거 (반응 속도 체감 향상) */
-    -webkit-tap-highlight-color: transparent; 
-}
-
-/* 게시글 아이템 스타일 */
-.post-item {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-}
-.post-item:hover { background-color: #f9f9f9; }
-
-/* style.css 최하단에 복사해서 붙여넣으세요 */
-.board-visual-area {
-    position: relative;
-    width: 100%;
-    margin-bottom: 40px;
-}
-
-.rect-banner {
-    width: 100%;
-    height: 160px;
-    overflow: hidden;
-    cursor: pointer;
-    position: relative;
-}
-
+/* 게시판 비주얼 영역 */
+.board-visual-area { position: relative; width: 100%; margin-bottom: 40px; }
+.rect-banner { width: 100%; height: 160px; overflow: hidden; background: #eee; }
 .rect-banner img { width: 100%; height: 100%; object-fit: cover; }
-
-.circle-profile {
-    position: absolute;
-    bottom: -35px;
-    left: 20px;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    border: 4px solid white;
-    overflow: hidden;
-    cursor: pointer;
-    background: #fff;
-    z-index: 10;
-}
-
+.circle-profile { position: absolute; bottom: -35px; left: 20px; width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; overflow: hidden; background: #fff; z-index: 10; }
 .circle-profile img { width: 100%; height: 100%; object-fit: cover; }
-
-.camera-icon {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.2); color: #fff;
-    display: flex; justify-content: center; align-items: center;
-    opacity: 0; transition: 0.3s;
-}
-.rect-banner:hover .camera-icon, .circle-profile:hover .camera-icon { opacity: 1; }
+.board-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
