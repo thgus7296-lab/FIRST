@@ -1,14 +1,11 @@
-// 1. 초기 설정 및 데이터
 let currentUser = null; 
 let isLoggedIn = false;
 let users = []; 
 let allPosts = []; 
 
-// 모달 열기
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
-        // [수정] 다시 열 때 기존 입력 내용 초기화
         if (id === 'joinModal') {
             const form = document.getElementById('joinForm');
             if (form) form.reset();
@@ -17,20 +14,18 @@ function openModal(id) {
         modal.style.display = 'block';
         setTimeout(() => {
             modal.classList.add('active');
-            // [수정] 이름 항목 입력 안되는 문제 개선 (포커스 타이밍 조정 및 클릭 강제)
             if (id === 'joinModal') {
-                const firstInput = document.getElementById('joinName');
+                const firstInput = document.getElementById('joinEmpId');
                 if (firstInput) {
                     firstInput.focus();
                     firstInput.click(); 
                 }
             }
-        }, 150); // 모달 애니메이션 대기 시간 소폭 증가
+        }, 150); 
         history.pushState({ modalOpen: id }, ''); 
     }
 }
 
-// 모달 닫기
 function closeModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
@@ -47,7 +42,7 @@ function handleJoin(event) {
     users.push({
         name: document.getElementById('joinName').value,
         empId: document.getElementById('joinEmpId').value,
-        rank: document.getElementById('joinRank').value, // [수정] 직급 데이터 추가
+        rank: document.getElementById('joinRank').value, 
         pw: document.getElementById('joinPw').value,
         position: document.getElementById('joinPosition').value
     });
@@ -144,7 +139,7 @@ function savePost() {
         content: content,
         author: currentUser.nickname,
         timestamp: new Date(),
-        likedBy: [], // [수정] 하트 누른 계정들의 ID 리스트 저장
+        likedBy: [], 
         comments: 0,
         views: 1
     };
@@ -165,7 +160,6 @@ function timeSince(date) {
     return "방금 전";
 }
 
-// [수정] 게시글 목록 렌더링 로직 개선
 function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     const filtered = allPosts.filter(p => p.board === boardName);
@@ -176,11 +170,8 @@ function renderPosts(boardName) {
     }
 
     listDiv.innerHTML = filtered.map(p => {
-        // [개선 사항 3-3] 첫 번째 줄 10자만 표기
         const firstLine = p.content.split('\n')[0];
         const summary = firstLine.length > 10 ? firstLine.substring(0, 10) + "..." : firstLine;
-
-        // [개선 사항 3-2] 내 계정이 눌렀는지 확인 (홀수번 클릭 상태)
         const isLikedByMe = currentUser && p.likedBy.includes(currentUser.empId);
         const heartIcon = isLikedByMe ? 'fas fa-heart liked' : 'far fa-heart';
 
@@ -205,17 +196,14 @@ function renderPosts(boardName) {
     }).join('');
 }
 
-// [수정] 계정별 고유 좋아요 처리 로직
 function toggleLike(id) {
     if (!currentUser) return;
     const post = allPosts.find(p => p.id === id);
     if(post) {
         const userIdx = post.likedBy.indexOf(currentUser.empId);
         if (userIdx === -1) {
-            // 홀수번 누름: 추가 (카운트 1)
             post.likedBy.push(currentUser.empId);
         } else {
-            // 짝수번 누름: 제거 (카운트 0)
             post.likedBy.splice(userIdx, 1);
         }
         renderPosts(post.board);
