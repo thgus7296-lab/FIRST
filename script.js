@@ -4,21 +4,22 @@ let users = [];
 let allPosts = []; 
 let currentViewingPostId = null;
 
+// 라운지별 이미지 관리 객체
+let loungeSettings = {
+    '1공장 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
+    '경제 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
+    '책임 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
+    '매니저 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
+    '취미 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
+    '대나무 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
+};
+
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
-        if (id === 'joinModal') {
-            const form = document.getElementById('joinForm');
-            if (form) form.reset();
-        }
+        if (id === 'joinModal') document.getElementById('joinForm').reset();
         modal.style.display = 'block';
-        setTimeout(() => {
-            modal.classList.add('active');
-            if (id === 'joinModal') {
-                const firstInput = document.getElementById('joinEmpId');
-                if (firstInput) { firstInput.focus(); firstInput.click(); }
-            }
-        }, 150); 
+        setTimeout(() => modal.classList.add('active'), 150); 
         history.pushState({ modalOpen: id }, ''); 
     }
 }
@@ -49,8 +50,6 @@ function handleLogin() {
     const empId = document.getElementById('loginEmpId').value;
     const pw = document.getElementById('loginPw').value;
     if (empId === "1" && pw === "1") successLogin({ empId: "1", position: "관리자", name: "관리자" });
-    else if (empId === "2" && pw === "2") successLogin({ empId: "2", position: "책임 매니저", name: "책임" });
-    else if (empId === "3" && pw === "3") successLogin({ empId: "3", position: "매니저", name: "매니저" });
     else {
         const user = users.find(u => u.empId === empId && u.pw === pw);
         if (user) successLogin(user);
@@ -60,7 +59,7 @@ function handleLogin() {
 
 function successLogin(user) {
     const userNum = user.empId.slice(-2).padStart(2, '0');
-    user.nickname = `익명 ${userNum}`;
+    user.nickname = user.position === "관리자" ? "관리자" : `익명 ${userNum}`;
     currentUser = user;
     isLoggedIn = true;
     document.getElementById('loginIcons').style.display = 'none';
@@ -92,17 +91,54 @@ function loadBoard(name) {
         if (name === "매니저 라운지" && currentUser.position !== "매니저") { alert("매니저 전용입니다."); return; }
         if (name === "책임 라운지" && currentUser.position !== "책임 매니저") { alert("책임 매니저 전용입니다."); return; }
     }
+    
     if (document.getElementById('sideMenu').classList.contains('active')) history.back();
+    
     setTimeout(() => {
         history.pushState({ view: 'board' }, '');
         document.getElementById('homeView').style.display = 'none';
         document.getElementById('boardView').style.display = 'block';
         document.getElementById('postDetailView').style.display = 'none';
         document.getElementById('currentBoardTitle').innerText = name;
+        
+        // 관리자일 경우 이미지 수정 버튼 노출
+        document.getElementById('adminImgEditBtn').style.display = (currentUser.position === "관리자") ? "block" : "none";
+        
+        // 해당 라운지 이미지 적용
+        document.getElementById('bgDisplay').src = loungeSettings[name].bg;
+        document.getElementById('profileDisplay').src = loungeSettings[name].profile;
+
         document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
         renderPosts(name);
     }, 10);
 }
+
+// 관리자 이미지 저장 기능
+async function saveLoungeImages() {
+    const boardName = document.getElementById('currentBoardTitle').innerText;
+    const bgFile = document.getElementById('bgInput').files[0];
+    const profileFile = document.getElementById('profileInput').files[0];
+
+    if (bgFile) {
+        loungeSettings[boardName].bg = await toBase64(bgFile);
+    }
+    if (profileFile) {
+        loungeSettings[boardName].profile = await toBase64(profileFile);
+    }
+
+    document.getElementById('bgDisplay').src = loungeSettings[boardName].bg;
+    document.getElementById('profileDisplay').src = loungeSettings[boardName].profile;
+    
+    alert("이미지가 변경되었습니다.");
+    closeModal('imgEditModal');
+}
+
+const toBase64 = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+});
 
 function openPostModal() {
     document.getElementById('postTitle').value = "";
@@ -114,7 +150,6 @@ function savePost() {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
-
     if (!title || !content) { alert("제목 혹은 글을 입력해주세요"); return; }
 
     allPosts.unshift({
@@ -128,7 +163,6 @@ function savePost() {
         comments: [],
         views: 0
     });
-
     renderPosts(board); 
     closeModal('postModal'); 
 }
@@ -179,23 +213,18 @@ function openPostDetail(id) {
     currentViewingPostId = id;
     post.views++;
     renderPosts(post.board);
-
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'block';
-
     document.getElementById('dtNickname').innerText = post.author;
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
-
     updateDetailStats(post);
     renderComments(post.comments);
     history.pushState({ view: 'detail', postId: id }, '');
 }
 
-function closePostDetail() {
-    history.back();
-}
+function closePostDetail() { history.back(); }
 
 function renderComments(comments) {
     const list = document.getElementById('dtCommentList');
@@ -211,13 +240,8 @@ function submitComment() {
     const input = document.getElementById('dtCommentInput');
     const text = input.value.trim();
     if(!text) return;
-
     const post = allPosts.find(p => p.id === currentViewingPostId);
-    post.comments.push({
-        author: currentUser.nickname,
-        text: text,
-        timestamp: new Date()
-    });
+    post.comments.push({ author: currentUser.nickname, text: text, timestamp: new Date() });
     input.value = "";
     renderComments(post.comments);
     updateDetailStats(post);
@@ -260,9 +284,7 @@ window.onpopstate = function(event) {
     document.querySelectorAll('.modal').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; });
     const menu = document.getElementById('sideMenu');
     if (menu && menu.classList.contains('active')) menu.classList.remove('active');
-    
-    if (event.state && event.state.view === 'detail') {
-    } else {
+    if (!(event.state && event.state.view === 'detail')) {
         document.getElementById('postDetailView').style.display = 'none';
         if (!event.state || event.state.view !== 'board') {
             document.getElementById('homeView').style.display = 'block';
