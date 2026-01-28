@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <header>
+    <header id="mainHeader">
         <div class="header-left" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
         <div class="header-center" onclick="goHome()"><h1>H1 Blind</h1></div>
         <div class="header-right">
@@ -52,6 +52,34 @@
             </div>
             <div id="postList" class="post-list"></div>
         </div>
+
+        <div id="postDetailView" style="display: none;">
+            <div class="detail-header">
+                <i class="fas fa-chevron-left back-btn" onclick="goBackToBoard()"></i>
+                <span class="detail-logo">H1 Blind</span>
+            </div>
+            <div class="detail-user-bar">
+                <span id="detailNickname" class="detail-nick">닉네임</span>
+                <span id="detailTime" class="detail-date">0분</span>
+            </div>
+            <div class="detail-content-area">
+                <h2 id="detailTitle">제목</h2>
+                <p id="detailContent">내용</p>
+            </div>
+            <div class="detail-stats-bar">
+                <span onclick="toggleLikeInDetail()" style="cursor:pointer;">
+                    <i id="detailLikeIcon" class="far fa-heart"></i> 좋아요 <small id="detailLikeCount">0</small>
+                </span>
+                <span><i class="far fa-comment"></i> <small id="detailCommentCount">0</small></span>
+            </div>
+            <div class="comment-divider"></div>
+            <div id="commentList" class="comment-list"></div>
+            
+            <div class="comment-input-bar">
+                <input type="text" id="commentInput" placeholder="댓글을 남겨주세요.">
+                <button onclick="addComment()">등록</button>
+            </div>
+        </div>
     </main>
 
     <div id="joinModal" class="modal">
@@ -63,13 +91,11 @@
                 <input type="text" id="joinEmpId" placeholder="사번" required inputmode="numeric">
                 <input type="password" id="joinPw" placeholder="비밀번호" required>
                 <input type="text" id="joinName" placeholder="이름" required inputmode="text">
-                
                 <select id="joinPosition" required>
                     <option value="" disabled selected>구분(매니저/책임) 선택</option>
                     <option value="매니저">매니저</option>
                     <option value="책임 매니저">책임 매니저</option>
                 </select>
-
                 <select id="joinRank" required>
                     <option value="" disabled selected>직책 선택</option>
                     <option value="공장장">공장장</option>
@@ -78,7 +104,6 @@
                     <option value="보직과장">보직과장</option>
                     <option value="해당없음">해당없음</option>
                 </select>
-                
                 <button type="submit" class="main-btn" style="width:100%; margin-top:10px;">가입하기</button>
             </form>
         </div>
