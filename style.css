@@ -1,43 +1,49 @@
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; -webkit-tap-highlight-color: transparent; }
+body { background-color: #f9f9f9; }
 .main-btn { background: #065d7a; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
 header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #ddd; background: #fff; position: sticky; top: 0; z-index: 100; }
 .side-menu { position: fixed; left: -250px; top: 0; width: 250px; height: 100%; background: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: 0.3s; z-index: 200; padding: 20px; }
 .side-menu.active { left: 0; }
-.side-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; list-style: none; }
+.side-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; list-style: none; font-weight: 500; }
 
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
 .modal.active { display: block; }
 .modal-content { background: white; margin: 10vh auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; position: relative; }
-.modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; }
+.modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
 .close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #888; }
 
 .post-item { padding: 15px; border-bottom: 1px solid #f0f0f0; background: #fff; cursor: pointer; }
 .post-user-info { display: flex; align-items: center; margin-bottom: 5px; gap: 10px; }
-.nickname { font-weight: bold; font-size: 14px; color: #333; }
-.post-date { color: #aaa; font-size: 12px; }
-.post-title { font-size: 16px; margin-bottom: 5px; }
-.post-summary { font-size: 14px; color: #666; }
+.nickname { font-weight: bold; font-size: 13px; color: #333; }
+.post-date { color: #aaa; font-size: 11px; }
+.post-title { font-size: 16px; margin-bottom: 5px; color: #222; font-weight: 600; }
+.post-summary { font-size: 14px; color: #666; margin-bottom: 10px; line-height: 1.4; }
+.post-stats { display: flex; gap: 15px; color: #888; font-size: 13px; }
+.fa-heart.liked { color: #ff4b4b !important; }
 
-.board-visual-area { position: relative; width: 100%; margin-bottom: 40px; }
-.rect-banner { width: 100%; height: 160px; background: #eee; }
+.board-visual-area { position: relative; width: 100%; margin-bottom: 45px; }
+.rect-banner { width: 100%; height: 160px; background: #eee; overflow: hidden; }
 .rect-banner img { width: 100%; height: 100%; object-fit: cover; }
-.circle-profile { position: absolute; bottom: -35px; left: 20px; width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; background: #fff; overflow: hidden; }
+.circle-profile { position: absolute; bottom: -35px; left: 20px; width: 85px; height: 85px; border-radius: 50%; border: 4px solid white; background: #fff; overflow: hidden; z-index: 5; }
 .circle-profile img { width: 100%; height: 100%; object-fit: cover; }
-.admin-edit-btn { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,0.5); color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+.admin-edit-btn { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,0.6); color: #fff; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; }
+
+.board-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; margin-bottom: 10px; }
 
 #postDetailView { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 500; overflow-y: auto; }
-.detail-top-nav { padding: 15px; display: flex; align-items: center; border-bottom: 1px solid #f1f1f1; background: #fff; }
+.detail-top-nav { padding: 15px; display: flex; align-items: center; border-bottom: 1px solid #f1f1f1; background: #fff; position: sticky; top:0; }
 .detail-back { font-size: 20px; margin-right: 15px; cursor: pointer; }
 .detail-header-info { padding: 20px; }
-.dt-nick { font-weight: bold; font-size: 15px; color: #333; }
-.dt-time { color: rgba(170, 170, 170, 0.7); font-size: 12px; }
-.dt-title { font-size: 22px; margin: 15px 0; font-weight: bold; }
-.dt-content { font-size: 16px; line-height: 1.6; white-space: pre-wrap; }
+.dt-nick { font-weight: bold; font-size: 15px; }
+.dt-time { color: #aaa; font-size: 12px; margin-left: 8px; }
+.dt-title { font-size: 22px; margin: 15px 0; font-weight: bold; line-height: 1.3; }
+.dt-content { font-size: 16px; line-height: 1.7; white-space: pre-wrap; color: #333; }
 
 .detail-action-bar { padding: 15px 20px; border-top: 1px solid #f1f1f1; display: flex; gap: 20px; color: #666; }
-.detail-divider { height: 8px; background: #f5f5f5; }
+.stat-item { display: flex; align-items: center; gap: 5px; }
+.detail-divider { height: 10px; background: #f4f4f4; }
 .dt-comment-item { padding: 15px 20px; border-bottom: 1px solid #f9f9f9; }
-.dt-comment-nick { font-weight: bold; font-size: 13px; }
-.dt-input-area { position: fixed; bottom: 0; left: 0; width: 100%; padding: 12px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; }
-.dt-input-area input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #eee; background: #f8f8f8; }
-.dt-input-area button { background: none; border: none; color: #065d7a; font-weight: bold; cursor: pointer; }
+.dt-comment-nick { font-weight: bold; font-size: 13px; margin-bottom: 4px; color: #444; }
+.dt-input-area { position: fixed; bottom: 0; left: 0; width: 100%; padding: 12px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; }
+.dt-input-area input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #eee; background: #f8f8f8; font-size: 15px; }
+.dt-input-area button { background: none; border: none; color: #065d7a; font-weight: bold; font-size: 16px; cursor: pointer; padding: 0 5px; }
