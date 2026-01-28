@@ -33,7 +33,6 @@
             </ul>
         </div>
     </nav>
-    <div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
 
     <main id="mainContent">
         <div id="homeView">
@@ -85,7 +84,7 @@
         </div>
     </main>
 
-    <div id="imgEditModal" class="modal" onclick="closeModalOnOverlay(event, 'imgEditModal')">
+    <div id="imgEditModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('imgEditModal')">&times;</span>
             <h2>라운지 이미지 변경</h2>
@@ -101,7 +100,7 @@
         </div>
     </div>
 
-    <div id="joinModal" class="modal" onclick="closeModalOnOverlay(event, 'joinModal')">
+    <div id="joinModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('joinModal')">&times;</span>
             <h2>회원가입</h2>
@@ -125,7 +124,7 @@
         </div>
     </div>
 
-    <div id="loginModal" class="modal" onclick="closeModalOnOverlay(event, 'loginModal')">
+    <div id="loginModal" class="modal">
         <div class="modal-content">
             <h2>로그인</h2>
             <input type="text" id="loginEmpId" placeholder="사번" inputmode="numeric">
@@ -137,7 +136,7 @@
         </div>
     </div>
 
-    <div id="postModal" class="modal" onclick="closeModalOnOverlay(event, 'postModal')">
+    <div id="postModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('postModal')">&times;</span>
             <h2>새 글 작성</h2>
