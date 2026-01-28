@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <header id="mainHeader">
+    <header>
         <div class="header-left" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
         <div class="header-center" onclick="goHome()"><h1>H1 Blind</h1></div>
         <div class="header-right">
@@ -54,30 +54,29 @@
         </div>
 
         <div id="postDetailView" style="display: none;">
-            <div class="detail-header">
-                <i class="fas fa-chevron-left back-btn" onclick="goBackToBoard()"></i>
-                <span class="detail-logo">H1 Blind</span>
+            <div class="detail-top-nav">
+                <i class="fas fa-chevron-left detail-back" onclick="closePostDetail()"></i>
+                <span class="detail-logo-text">H1 Blind</span>
             </div>
-            <div class="detail-user-bar">
-                <span id="detailNickname" class="detail-nick">닉네임</span>
-                <span id="detailTime" class="detail-date">0분</span>
+            <div class="detail-header-info">
+                <div class="detail-user-row">
+                    <span id="dtNickname" class="dt-nick">닉네임</span>
+                    <span id="dtTime" class="dt-time">방금 전</span>
+                </div>
+                <h2 id="dtTitle" class="dt-title">제목</h2>
+                <p id="dtContent" class="dt-content">내용</p>
             </div>
-            <div class="detail-content-area">
-                <h2 id="detailTitle">제목</h2>
-                <p id="detailContent">내용</p>
-            </div>
-            <div class="detail-stats-bar">
-                <span onclick="toggleLikeInDetail()" style="cursor:pointer;">
-                    <i id="detailLikeIcon" class="far fa-heart"></i> 좋아요 <small id="detailLikeCount">0</small>
+            <div class="detail-action-bar">
+                <span onclick="handleLikeInDetail()" style="cursor:pointer;">
+                    <i id="dtLikeIcon" class="far fa-heart"></i> 좋아요 <small id="dtLikeCount">0</small>
                 </span>
-                <span><i class="far fa-comment"></i> <small id="detailCommentCount">0</small></span>
+                <span><i class="far fa-comment"></i> <small id="dtCommentCount">0</small></span>
             </div>
-            <div class="comment-divider"></div>
-            <div id="commentList" class="comment-list"></div>
-            
-            <div class="comment-input-bar">
-                <input type="text" id="commentInput" placeholder="댓글을 남겨주세요.">
-                <button onclick="addComment()">등록</button>
+            <div class="detail-divider"></div>
+            <div id="dtCommentList" class="dt-comment-list"></div>
+            <div class="dt-input-area">
+                <input type="text" id="dtCommentInput" placeholder="댓글을 남겨주세요.">
+                <button onclick="submitComment()">등록</button>
             </div>
         </div>
     </main>
