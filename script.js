@@ -4,7 +4,6 @@ let users = [];
 let allPosts = []; 
 let currentViewingPostId = null;
 
-// --- 기존 기능 유지 ---
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
@@ -115,10 +114,9 @@ function savePost() {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
-
     if (!title || !content) { alert("제목 혹은 글을 입력해주세요"); return; }
 
-    const newPost = {
+    allPosts.unshift({
         id: Date.now(),
         board: board,
         title: title,
@@ -128,22 +126,9 @@ function savePost() {
         likedBy: [], 
         comments: [],
         views: 0
-    };
-
-    allPosts.unshift(newPost);
+    });
     renderPosts(board); 
     closeModal('postModal'); 
-}
-
-function timeSince(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    let interval = seconds / 86400;
-    if (interval >= 1) return Math.floor(interval) + "일";
-    interval = seconds / 3600;
-    if (interval >= 1) return Math.floor(interval) + "시간";
-    interval = seconds / 60;
-    if (interval >= 1) return Math.floor(interval) + "분";
-    return "방금 전";
 }
 
 function renderPosts(boardName) {
@@ -154,7 +139,6 @@ function renderPosts(boardName) {
         return;
     }
     listDiv.innerHTML = filtered.map(p => {
-        const summary = p.content.length > 20 ? p.content.substring(0, 20) + "..." : p.content;
         const isLiked = currentUser && p.likedBy.includes(currentUser.empId);
         return `
             <div class="post-item" onclick="openPostDetail(${p.id})">
@@ -163,7 +147,7 @@ function renderPosts(boardName) {
                     <span class="post-date">${timeSince(p.timestamp)}</span>
                 </div>
                 <h4 class="post-title">${p.title}</h4>
-                <p class="post-summary">${summary}</p>
+                <p class="post-summary">${p.content.substring(0, 20)}</p>
                 <div class="post-stats">
                     <span onclick="event.stopPropagation(); toggleLike(${p.id})">
                         <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> <small>${p.likedBy.length}</small>
@@ -176,18 +160,15 @@ function renderPosts(boardName) {
     }).join('');
 }
 
-// --- [수정] 상세 보기 (조회수 실시간 반영) ---
 function openPostDetail(id) {
     const post = allPosts.find(p => p.id === id);
     if(!post) return;
     currentViewingPostId = id;
-    
-    post.views++; // 조회수 증가
-    renderPosts(post.board); // 목록 즉시 갱신 (백그라운드)
+    post.views++;
+    renderPosts(post.board);
 
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'block';
-
     document.getElementById('dtNickname').innerText = post.author;
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
@@ -198,8 +179,49 @@ function openPostDetail(id) {
     history.pushState({ view: 'detail', postId: id }, '');
 }
 
-function closePostDetail() {
-    history.back();
+function closePostDetail() { history.back(); }
+
+function submitComment() {
+    const input = document.getElementById('dtCommentInput');
+    const text = input.value.trim();
+    if(!text) return;
+    const post = allPosts.find(p => p.id === currentViewingPostId);
+    post.comments.push({ author: currentUser.nickname, text: text, timestamp: new Date() });
+    input.value = "";
+    renderComments(post.comments);
+    updateDetailStats(post);
+    renderPosts(post.board);
+}
+
+function updateDetailStats(post) {
+    const isLiked = currentUser && post.likedBy.includes(currentUser.empId);
+    document.getElementById('dtLikeIcon').className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
+    document.getElementById('dtLikeCount').innerText = post.likedBy.length;
+    document.getElementById('dtCommentCount').innerText = post.comments.length;
+}
+
+function toggleLike(id) {
+    if (!currentUser) return;
+    const post = allPosts.find(p => p.id === id);
+    const idx = post.likedBy.indexOf(currentUser.empId);
+    if (idx === -1) post.likedBy.push(currentUser.empId);
+    else post.likedBy.splice(idx, 1);
+    renderPosts(post.board);
+}
+
+function handleLikeInDetail() {
+    toggleLike(currentViewingPostId);
+    updateDetailStats(allPosts.find(p => p.id === currentViewingPostId));
+}
+
+function timeSince(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return "방금 전";
+    let interval = seconds / 3600;
+    if (interval >= 1) return Math.floor(interval) + "시간";
+    interval = seconds / 60;
+    if (interval >= 1) return Math.floor(interval) + "분";
+    return Math.floor(seconds / 86400) + "일";
 }
 
 function renderComments(comments) {
@@ -212,54 +234,11 @@ function renderComments(comments) {
     `).join('');
 }
 
-// --- [수정] 댓글 등록 (댓글수 목록 실시간 반영) ---
-function submitComment() {
-    const input = document.getElementById('dtCommentInput');
-    const text = input.value.trim();
-    if(!text) return;
-
-    const post = allPosts.find(p => p.id === currentViewingPostId);
-    post.comments.push({
-        author: currentUser.nickname,
-        text: text,
-        timestamp: new Date()
-    });
-    
-    input.value = "";
-    renderComments(post.comments);
-    updateDetailStats(post);
-    renderPosts(post.board); // 목록 댓글수 즉시 갱신
-}
-
-function updateDetailStats(post) {
-    const isLiked = currentUser && post.likedBy.includes(currentUser.empId);
-    document.getElementById('dtLikeIcon').className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
-    document.getElementById('dtLikeCount').innerText = post.likedBy.length;
-    document.getElementById('dtCommentCount').innerText = post.comments.length;
-}
-
-function handleLikeInDetail() {
-    toggleLike(currentViewingPostId);
-    const post = allPosts.find(p => p.id === currentViewingPostId);
-    updateDetailStats(post);
-}
-
-function toggleLike(id) {
-    if (!currentUser) return;
-    const post = allPosts.find(p => p.id === id);
-    const idx = post.likedBy.indexOf(currentUser.empId);
-    if (idx === -1) post.likedBy.push(currentUser.empId);
-    else post.likedBy.splice(idx, 1);
-    renderPosts(post.board);
-}
-
-// 이벤트 리스너 및 popstate 로직은 백업본과 동일 (유지)
 window.addEventListener('click', function(event) {
     if (event.target.closest('.modal-content')) return; 
     if (event.target.classList.contains('modal')) { closeModal(event.target.id); return; }
     const sideMenu = document.getElementById('sideMenu');
-    const menuBtn = document.querySelector('.header-left');
-    if (sideMenu && sideMenu.classList.contains('active') && !sideMenu.contains(event.target) && !menuBtn.contains(event.target)) {
+    if (sideMenu && sideMenu.classList.contains('active') && !sideMenu.contains(event.target) && !document.querySelector('.header-left').contains(event.target)) {
         history.back();
     }
 }, true);
@@ -268,16 +247,13 @@ window.onpopstate = function(event) {
     document.querySelectorAll('.modal').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; });
     const menu = document.getElementById('sideMenu');
     if (menu && menu.classList.contains('active')) menu.classList.remove('active');
-    
-    if (event.state && event.state.view === 'detail') {
-        // 상세 유지
-    } else {
+    if (!event.state || event.state.view !== 'detail') {
         document.getElementById('postDetailView').style.display = 'none';
-        if (!event.state || event.state.view !== 'board') {
+        if (event.state?.view === 'board') {
+            document.getElementById('boardView').style.display = 'block';
+        } else {
             document.getElementById('homeView').style.display = 'block';
             document.getElementById('boardView').style.display = 'none';
-        } else {
-            document.getElementById('boardView').style.display = 'block';
         }
     }
 };
