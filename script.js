@@ -2,16 +2,23 @@ let currentUser = null;
 let isLoggedIn = false;
 let users = []; 
 let allPosts = []; 
-let currentPostId = null; // 현재 상세 보기 중인 게시글 ID
+let currentViewingPostId = null;
 
+// --- 기존 기능 유지 ---
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
-        if (id === 'joinModal') document.getElementById('joinForm').reset();
+        if (id === 'joinModal') {
+            const form = document.getElementById('joinForm');
+            if (form) form.reset();
+        }
         modal.style.display = 'block';
         setTimeout(() => {
             modal.classList.add('active');
-            if (id === 'joinModal') document.getElementById('joinEmpId').focus();
+            if (id === 'joinModal') {
+                const firstInput = document.getElementById('joinEmpId');
+                if (firstInput) { firstInput.focus(); firstInput.click(); }
+            }
         }, 150); 
         history.pushState({ modalOpen: id }, ''); 
     }
@@ -42,15 +49,19 @@ function handleJoin(event) {
 function handleLogin() {
     const empId = document.getElementById('loginEmpId').value;
     const pw = document.getElementById('loginPw').value;
-    const user = users.find(u => u.empId === empId && u.pw === pw);
-
     if (empId === "1" && pw === "1") successLogin({ empId: "1", position: "관리자", name: "관리자" });
-    else if (user) successLogin(user);
-    else alert("정보를 확인해주세요");
+    else if (empId === "2" && pw === "2") successLogin({ empId: "2", position: "책임 매니저", name: "책임" });
+    else if (empId === "3" && pw === "3") successLogin({ empId: "3", position: "매니저", name: "매니저" });
+    else {
+        const user = users.find(u => u.empId === empId && u.pw === pw);
+        if (user) successLogin(user);
+        else alert("정보를 확인해주세요");
+    }
 }
 
 function successLogin(user) {
-    user.nickname = `익명 ${user.empId.slice(-2).padStart(2, '0')}`;
+    const userNum = user.empId.slice(-2).padStart(2, '0');
+    user.nickname = `익명 ${userNum}`;
     currentUser = user;
     isLoggedIn = true;
     document.getElementById('loginIcons').style.display = 'none';
@@ -73,26 +84,42 @@ function goHome() {
     document.getElementById('homeView').style.display = 'block';
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'none';
-    document.getElementById('mainHeader').style.display = 'flex';
+    document.getElementById('sideMenu').classList.remove('active');
 }
 
 function loadBoard(name) {
     if (!isLoggedIn) { alert("로그인을 해주세요"); return; }
-    document.getElementById('homeView').style.display = 'none';
-    document.getElementById('boardView').style.display = 'block';
-    document.getElementById('postDetailView').style.display = 'none';
-    document.getElementById('mainHeader').style.display = 'flex';
-    document.getElementById('currentBoardTitle').innerText = name;
-    renderPosts(name);
+    if (currentUser.position !== "관리자") {
+        if (name === "매니저 라운지" && currentUser.position !== "매니저") { alert("매니저 전용입니다."); return; }
+        if (name === "책임 라운지" && currentUser.position !== "책임 매니저") { alert("책임 매니저 전용입니다."); return; }
+    }
+    if (document.getElementById('sideMenu').classList.contains('active')) history.back();
+    setTimeout(() => {
+        history.pushState({ view: 'board' }, '');
+        document.getElementById('homeView').style.display = 'none';
+        document.getElementById('boardView').style.display = 'block';
+        document.getElementById('postDetailView').style.display = 'none';
+        document.getElementById('currentBoardTitle').innerText = name;
+        document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
+        renderPosts(name);
+    }, 10);
 }
 
+function openPostModal() {
+    document.getElementById('postTitle').value = "";
+    document.getElementById('postContent').value = "";
+    openModal('postModal');
+}
+
+// --- 보강된 기능: 댓글 배열 추가 ---
 function savePost() {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
-    if (!title || !content) return;
 
-    allPosts.unshift({
+    if (!title || !content) { alert("제목 혹은 글을 입력해주세요"); return; }
+
+    const newPost = {
         id: Date.now(),
         board: board,
         title: title,
@@ -100,8 +127,11 @@ function savePost() {
         author: currentUser.nickname,
         timestamp: new Date(),
         likedBy: [], 
-        comments: [] // 댓글 객체 배열로 변경
-    });
+        comments: [], // 상세 기능을 위해 배열로 관리
+        views: 1
+    };
+
+    allPosts.unshift(newPost);
     renderPosts(board); 
     closeModal('postModal'); 
 }
@@ -117,74 +147,13 @@ function timeSince(date) {
     return "방금 전";
 }
 
-// 상세 페이지 열기
-function openPostDetail(id) {
-    const post = allPosts.find(p => p.id === id);
-    if(!post) return;
-    currentPostId = id;
-
-    document.getElementById('mainHeader').style.display = 'none';
-    document.getElementById('boardView').style.display = 'none';
-    document.getElementById('postDetailView').style.display = 'block';
-
-    document.getElementById('detailNickname').innerText = post.author;
-    document.getElementById('detailTime').innerText = timeSince(post.timestamp);
-    document.getElementById('detailTitle').innerText = post.title;
-    document.getElementById('detailContent').innerText = post.content;
-    
-    updateDetailStats(post);
-    renderComments(post.comments);
-    history.pushState({ view: 'detail', postId: id }, '');
-}
-
-function goBackToBoard() {
-    history.back();
-}
-
-function updateDetailStats(post) {
-    const isLiked = currentUser && post.likedBy.includes(currentUser.empId);
-    const likeIcon = document.getElementById('detailLikeIcon');
-    likeIcon.className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
-    document.getElementById('detailLikeCount').innerText = post.likedBy.length;
-    document.getElementById('detailCommentCount').innerText = post.comments.length;
-}
-
-function toggleLikeInDetail() {
-    toggleLike(currentPostId);
-    const post = allPosts.find(p => p.id === currentPostId);
-    updateDetailStats(post);
-}
-
-function addComment() {
-    const input = document.getElementById('commentInput');
-    const text = input.value.trim();
-    if(!text) return;
-
-    const post = allPosts.find(p => p.id === currentPostId);
-    post.comments.push({
-        author: currentUser.nickname,
-        text: text,
-        timestamp: new Date()
-    });
-    
-    input.value = "";
-    renderComments(post.comments);
-    updateDetailStats(post);
-}
-
-function renderComments(comments) {
-    const list = document.getElementById('commentList');
-    list.innerHTML = comments.map(c => `
-        <div class="comment-item">
-            <div class="comment-nick">${c.author}</div>
-            <div class="comment-text">${c.text}</div>
-        </div>
-    `).join('');
-}
-
 function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     const filtered = allPosts.filter(p => p.board === boardName);
+    if(filtered.length === 0) {
+        listDiv.innerHTML = '<p style="padding:20px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
+        return;
+    }
     listDiv.innerHTML = filtered.map(p => {
         const summary = p.content.length > 20 ? p.content.substring(0, 20) + "..." : p.content;
         const isLiked = currentUser && p.likedBy.includes(currentUser.empId);
@@ -197,14 +166,78 @@ function renderPosts(boardName) {
                 <h4 class="post-title">${p.title}</h4>
                 <p class="post-summary">${summary}</p>
                 <div class="post-stats">
-                    <span onclick="event.stopPropagation(); toggleLike(${p.id}); renderPosts('${boardName}')">
+                    <span onclick="event.stopPropagation(); toggleLike(${p.id})">
                         <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> <small>${p.likedBy.length}</small>
                     </span>
                     <span><i class="far fa-comment"></i> <small>${p.comments.length}</small></span>
+                    <span><i class="far fa-eye"></i> <small>${p.views}</small></span>
                 </div>
             </div>
         `;
     }).join('');
+}
+
+// --- 상세 보기 기능 (신규) ---
+function openPostDetail(id) {
+    const post = allPosts.find(p => p.id === id);
+    if(!post) return;
+    currentViewingPostId = id;
+    post.views++;
+
+    document.getElementById('boardView').style.display = 'none';
+    document.getElementById('postDetailView').style.display = 'block';
+
+    document.getElementById('dtNickname').innerText = post.author;
+    document.getElementById('dtTime').innerText = timeSince(post.timestamp);
+    document.getElementById('dtTitle').innerText = post.title;
+    document.getElementById('dtContent').innerText = post.content;
+
+    updateDetailStats(post);
+    renderComments(post.comments);
+    history.pushState({ view: 'detail', postId: id }, '');
+}
+
+function closePostDetail() {
+    history.back();
+}
+
+function renderComments(comments) {
+    const list = document.getElementById('dtCommentList');
+    list.innerHTML = comments.map(c => `
+        <div class="dt-comment-item">
+            <div class="dt-comment-nick">${c.author}</div>
+            <div class="dt-comment-text">${c.text}</div>
+        </div>
+    `).join('');
+}
+
+function submitComment() {
+    const input = document.getElementById('dtCommentInput');
+    const text = input.value.trim();
+    if(!text) return;
+
+    const post = allPosts.find(p => p.id === currentViewingPostId);
+    post.comments.push({
+        author: currentUser.nickname,
+        text: text,
+        timestamp: new Date()
+    });
+    input.value = "";
+    renderComments(post.comments);
+    updateDetailStats(post);
+}
+
+function updateDetailStats(post) {
+    const isLiked = currentUser && post.likedBy.includes(currentUser.empId);
+    document.getElementById('dtLikeIcon').className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
+    document.getElementById('dtLikeCount').innerText = post.likedBy.length;
+    document.getElementById('dtCommentCount').innerText = post.comments.length;
+}
+
+function handleLikeInDetail() {
+    toggleLike(currentViewingPostId);
+    const post = allPosts.find(p => p.id === currentViewingPostId);
+    updateDetailStats(post);
 }
 
 function toggleLike(id) {
@@ -213,14 +246,33 @@ function toggleLike(id) {
     const idx = post.likedBy.indexOf(currentUser.empId);
     if (idx === -1) post.likedBy.push(currentUser.empId);
     else post.likedBy.splice(idx, 1);
+    renderPosts(post.board);
 }
 
+window.addEventListener('click', function(event) {
+    if (event.target.closest('.modal-content')) return; 
+    if (event.target.classList.contains('modal')) { closeModal(event.target.id); return; }
+    const sideMenu = document.getElementById('sideMenu');
+    const menuBtn = document.querySelector('.header-left');
+    if (sideMenu && sideMenu.classList.contains('active') && !sideMenu.contains(event.target) && !menuBtn.contains(event.target)) {
+        history.back();
+    }
+}, true);
+
 window.onpopstate = function(event) {
-    if (!event.state || event.state.view !== 'detail') {
+    document.querySelectorAll('.modal').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; });
+    const menu = document.getElementById('sideMenu');
+    if (menu && menu.classList.contains('active')) menu.classList.remove('active');
+    
+    if (event.state && event.state.view === 'detail') {
+        // 상세 페이지 유지
+    } else {
         document.getElementById('postDetailView').style.display = 'none';
-        if (document.getElementById('homeView').style.display === 'none') {
+        if (!event.state || event.state.view !== 'board') {
+            document.getElementById('homeView').style.display = 'block';
+            document.getElementById('boardView').style.display = 'none';
+        } else {
             document.getElementById('boardView').style.display = 'block';
-            document.getElementById('mainHeader').style.display = 'flex';
         }
     }
 };
