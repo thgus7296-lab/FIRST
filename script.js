@@ -4,16 +4,26 @@ let users = [];
 let allPosts = []; 
 let currentViewingPostId = null;
 
-// --- 기존 기본 함수 유지 ---
+// --- 기존 기능 유지 ---
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
-        if (id === 'joinModal') document.getElementById('joinForm')?.reset();
+        if (id === 'joinModal') {
+            const form = document.getElementById('joinForm');
+            if (form) form.reset();
+        }
         modal.style.display = 'block';
-        setTimeout(() => { modal.classList.add('active'); }, 150);
+        setTimeout(() => {
+            modal.classList.add('active');
+            if (id === 'joinModal') {
+                const firstInput = document.getElementById('joinEmpId');
+                if (firstInput) { firstInput.focus(); firstInput.click(); }
+            }
+        }, 150); 
         history.pushState({ modalOpen: id }, ''); 
     }
 }
+
 function closeModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
@@ -22,6 +32,7 @@ function closeModal(id) {
         if (history.state && history.state.modalOpen === id) history.back();
     }
 }
+
 function handleJoin(event) {
     event.preventDefault();
     users.push({
@@ -34,14 +45,20 @@ function handleJoin(event) {
     alert("회원가입이 완료되었습니다.");
     closeModal('joinModal');
 }
+
 function handleLogin() {
     const empId = document.getElementById('loginEmpId').value;
     const pw = document.getElementById('loginPw').value;
-    const user = users.find(u => u.empId === empId && u.pw === pw);
     if (empId === "1" && pw === "1") successLogin({ empId: "1", position: "관리자", name: "관리자" });
-    else if (user) successLogin(user);
-    else alert("정보를 확인해주세요");
+    else if (empId === "2" && pw === "2") successLogin({ empId: "2", position: "책임 매니저", name: "책임" });
+    else if (empId === "3" && pw === "3") successLogin({ empId: "3", position: "매니저", name: "매니저" });
+    else {
+        const user = users.find(u => u.empId === empId && u.pw === pw);
+        if (user) successLogin(user);
+        else alert("정보를 확인해주세요");
+    }
 }
+
 function successLogin(user) {
     const userNum = user.empId.slice(-2).padStart(2, '0');
     user.nickname = `익명 ${userNum}`;
@@ -50,35 +67,58 @@ function successLogin(user) {
     document.getElementById('loginIcons').style.display = 'none';
     document.getElementById('userInfoIcon').style.display = 'inline';
     closeModal('loginModal');
+    alert(`${user.nickname}님 환영합니다!`);
 }
+
+function showUserInfo() {
+    alert(`내 정보\n닉네임: ${currentUser.nickname}\n사번: ${currentUser.empId}\n직급: ${currentUser.position}`);
+}
+
 function toggleMenu() {
     const menu = document.getElementById('sideMenu');
     menu.classList.toggle('active');
     if (menu.classList.contains('active')) history.pushState({ state: 'menu' }, '');
 }
+
 function goHome() {
     document.getElementById('homeView').style.display = 'block';
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'none';
-}
-function loadBoard(name) {
-    if (!isLoggedIn) { alert("로그인을 해주세요"); return; }
-    history.pushState({ view: 'board' }, '');
-    document.getElementById('homeView').style.display = 'none';
-    document.getElementById('boardView').style.display = 'block';
-    document.getElementById('postDetailView').style.display = 'none';
-    document.getElementById('currentBoardTitle').innerText = name;
-    renderPosts(name);
+    document.getElementById('sideMenu').classList.remove('active');
 }
 
-// --- 게시글 저장 ---
+function loadBoard(name) {
+    if (!isLoggedIn) { alert("로그인을 해주세요"); return; }
+    if (currentUser.position !== "관리자") {
+        if (name === "매니저 라운지" && currentUser.position !== "매니저") { alert("매니저 전용입니다."); return; }
+        if (name === "책임 라운지" && currentUser.position !== "책임 매니저") { alert("책임 매니저 전용입니다."); return; }
+    }
+    if (document.getElementById('sideMenu').classList.contains('active')) history.back();
+    setTimeout(() => {
+        history.pushState({ view: 'board' }, '');
+        document.getElementById('homeView').style.display = 'none';
+        document.getElementById('boardView').style.display = 'block';
+        document.getElementById('postDetailView').style.display = 'none';
+        document.getElementById('currentBoardTitle').innerText = name;
+        document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
+        renderPosts(name);
+    }, 10);
+}
+
+function openPostModal() {
+    document.getElementById('postTitle').value = "";
+    document.getElementById('postContent').value = "";
+    openModal('postModal');
+}
+
 function savePost() {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
-    if (!title || !content) return;
 
-    allPosts.unshift({
+    if (!title || !content) { alert("제목 혹은 글을 입력해주세요"); return; }
+
+    const newPost = {
         id: Date.now(),
         board: board,
         title: title,
@@ -88,24 +128,63 @@ function savePost() {
         likedBy: [], 
         comments: [],
         views: 0
-    });
+    };
+
+    allPosts.unshift(newPost);
     renderPosts(board); 
     closeModal('postModal'); 
 }
 
-// --- [수정] 상세 보기 (조회수 즉시 반영) ---
+function timeSince(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    let interval = seconds / 86400;
+    if (interval >= 1) return Math.floor(interval) + "일";
+    interval = seconds / 3600;
+    if (interval >= 1) return Math.floor(interval) + "시간";
+    interval = seconds / 60;
+    if (interval >= 1) return Math.floor(interval) + "분";
+    return "방금 전";
+}
+
+function renderPosts(boardName) {
+    const listDiv = document.getElementById('postList');
+    const filtered = allPosts.filter(p => p.board === boardName);
+    if(filtered.length === 0) {
+        listDiv.innerHTML = '<p style="padding:20px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
+        return;
+    }
+    listDiv.innerHTML = filtered.map(p => {
+        const summary = p.content.length > 20 ? p.content.substring(0, 20) + "..." : p.content;
+        const isLiked = currentUser && p.likedBy.includes(currentUser.empId);
+        return `
+            <div class="post-item" onclick="openPostDetail(${p.id})">
+                <div class="post-user-info">
+                    <span class="nickname">${p.author}</span>
+                    <span class="post-date">${timeSince(p.timestamp)}</span>
+                </div>
+                <h4 class="post-title">${p.title}</h4>
+                <p class="post-summary">${summary}</p>
+                <div class="post-stats">
+                    <span onclick="event.stopPropagation(); toggleLike(${p.id})">
+                        <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> <small>${p.likedBy.length}</small>
+                    </span>
+                    <span><i class="far fa-comment"></i> <small>${p.comments.length}</small></span>
+                    <span><i class="far fa-eye"></i> <small>${p.views}</small></span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// --- [수정] 상세 보기 (조회수 실시간 반영) ---
 function openPostDetail(id) {
     const post = allPosts.find(p => p.id === id);
     if(!post) return;
     currentViewingPostId = id;
-
-    // 1. 조회수 즉시 상승
-    post.views++;
     
-    // 2. 목록 화면 미리 갱신 (나중에 돌아왔을 때 보임)
-    renderPosts(post.board);
+    post.views++; // 조회수 증가
+    renderPosts(post.board); // 목록 즉시 갱신 (백그라운드)
 
-    // 3. UI 전환
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'block';
 
@@ -123,7 +202,17 @@ function closePostDetail() {
     history.back();
 }
 
-// --- [수정] 댓글 등록 (목록 개수 즉시 반영) ---
+function renderComments(comments) {
+    const list = document.getElementById('dtCommentList');
+    list.innerHTML = comments.map(c => `
+        <div class="dt-comment-item">
+            <div class="dt-comment-nick">${c.author}</div>
+            <div class="dt-comment-text">${c.text}</div>
+        </div>
+    `).join('');
+}
+
+// --- [수정] 댓글 등록 (댓글수 목록 실시간 반영) ---
 function submitComment() {
     const input = document.getElementById('dtCommentInput');
     const text = input.value.trim();
@@ -139,9 +228,7 @@ function submitComment() {
     input.value = "";
     renderComments(post.comments);
     updateDetailStats(post);
-    
-    // 게시글 목록의 댓글 카운트도 즉시 갱신
-    renderPosts(post.board);
+    renderPosts(post.board); // 목록 댓글수 즉시 갱신
 }
 
 function updateDetailStats(post) {
@@ -166,60 +253,31 @@ function toggleLike(id) {
     renderPosts(post.board);
 }
 
-function renderPosts(boardName) {
-    const listDiv = document.getElementById('postList');
-    const filtered = allPosts.filter(p => p.board === boardName);
-    listDiv.innerHTML = filtered.map(p => {
-        const isLiked = currentUser && p.likedBy.includes(currentUser.empId);
-        return `
-            <div class="post-item" onclick="openPostDetail(${p.id})">
-                <div class="post-user-info">
-                    <span class="nickname">${p.author}</span>
-                    <span class="post-date">${timeSince(p.timestamp)}</span>
-                </div>
-                <h4 class="post-title">${p.title}</h4>
-                <p class="post-summary">${p.content.substring(0, 20)}</p>
-                <div class="post-stats">
-                    <span onclick="event.stopPropagation(); toggleLike(${p.id})">
-                        <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> <small>${p.likedBy.length}</small>
-                    </span>
-                    <span><i class="far fa-comment"></i> <small>${p.comments.length}</small></span>
-                    <span><i class="far fa-eye"></i> <small>${p.views}</small></span>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function timeSince(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    let interval = seconds / 86400;
-    if (interval >= 1) return Math.floor(interval) + "일";
-    interval = seconds / 3600;
-    if (interval >= 1) return Math.floor(interval) + "시간";
-    interval = seconds / 60;
-    if (interval >= 1) return Math.floor(interval) + "분";
-    return "방금 전";
-}
-
-function renderComments(comments) {
-    const list = document.getElementById('dtCommentList');
-    list.innerHTML = comments.map(c => `
-        <div class="dt-comment-item">
-            <div class="dt-comment-nick">${c.author}</div>
-            <div class="dt-comment-text">${c.text}</div>
-        </div>
-    `).join('');
-}
+// 이벤트 리스너 및 popstate 로직은 백업본과 동일 (유지)
+window.addEventListener('click', function(event) {
+    if (event.target.closest('.modal-content')) return; 
+    if (event.target.classList.contains('modal')) { closeModal(event.target.id); return; }
+    const sideMenu = document.getElementById('sideMenu');
+    const menuBtn = document.querySelector('.header-left');
+    if (sideMenu && sideMenu.classList.contains('active') && !sideMenu.contains(event.target) && !menuBtn.contains(event.target)) {
+        history.back();
+    }
+}, true);
 
 window.onpopstate = function(event) {
-    if (!event.state || event.state.view !== 'detail') {
+    document.querySelectorAll('.modal').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; });
+    const menu = document.getElementById('sideMenu');
+    if (menu && menu.classList.contains('active')) menu.classList.remove('active');
+    
+    if (event.state && event.state.view === 'detail') {
+        // 상세 유지
+    } else {
         document.getElementById('postDetailView').style.display = 'none';
-        if (event.state?.view === 'board') {
-            document.getElementById('boardView').style.display = 'block';
-        } else {
+        if (!event.state || event.state.view !== 'board') {
             document.getElementById('homeView').style.display = 'block';
             document.getElementById('boardView').style.display = 'none';
+        } else {
+            document.getElementById('boardView').style.display = 'block';
         }
     }
 };
