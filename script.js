@@ -1,296 +1,154 @@
-let currentUser = null; 
-let isLoggedIn = false;
-let users = []; 
-let allPosts = []; 
-let currentViewingPostId = null;
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>H1 Blind</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-left" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
+        <div class="header-center" onclick="goHome()"><h1>H1 Blind</h1></div>
+        <div class="header-right">
+            <span id="loginIcons">
+                <i class="fas fa-user" style="margin-right: 10px;" onclick="openModal('loginModal')"></i>
+                <i class="fas fa-plus-circle" onclick="openModal('joinModal')"></i>
+            </span>
+            <span id="userInfoIcon" style="display: none;" onclick="showUserInfo()"><i class="fas fa-user"></i></span>
+        </div>
+    </header>
 
-// 라운지별 이미지 관리 객체
-let loungeSettings = {
-    '1공장 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '경제 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '책임 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '매니저 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '취미 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '대나무 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
-};
+    <nav id="sideMenu" class="side-menu">
+        <div class="menu-content">
+            <h3>게시판 목록</h3>
+            <ul>
+                <li onclick="loadBoard('1공장 라운지')">1공장 라운지</li>
+                <li onclick="loadBoard('경제 라운지')">경제 라운지</li>
+                <li onclick="loadBoard('책임 라운지')">책임 라운지</li>
+                <li onclick="loadBoard('매니저 라운지')">매니저 라운지</li>
+                <li onclick="loadBoard('취미 라운지')">취미 라운지</li>
+                <li onclick="loadBoard('대나무 라운지')">대나무 라운지</li>
+            </ul>
+        </div>
+    </nav>
 
-function openModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) {
-        if (id === 'joinModal') document.getElementById('joinForm').reset();
-        modal.style.display = 'block';
-        setTimeout(() => modal.classList.add('active'), 150); 
-        history.pushState({ modalOpen: id }, ''); 
-    }
-}
+    <main id="mainContent">
+        <div id="homeView">
+            <div class="image-placeholder" style="height:100px; background:#065d7a; color:#fff; display:flex; justify-content:center; align-items:center;">상단 배너 영역</div>
+            <div style="height:60px;"></div>
+            <div class="image-placeholder" style="height:300px; background:#eee; display:flex; justify-content:center; align-items:center;">메인 콘텐츠 영역</div>
+        </div>
 
-function closeModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) {
-        modal.style.display = 'none';
-        modal.classList.remove('active');
-        if (history.state && history.state.modalOpen === id) history.back();
-    }
-}
+        <div id="boardView" style="display: none;">
+            <div class="board-visual-area">
+                <div class="rect-banner"><img id="bgDisplay" src="https://via.placeholder.com/800x200" alt="배경"></div>
+                <div class="circle-profile"><img id="profileDisplay" src="https://via.placeholder.com/100x100" alt="프로필"></div>
+                <button id="adminImgEditBtn" class="admin-edit-btn" onclick="openModal('imgEditModal')" style="display:none;">이미지 수정</button>
+            </div>
+            <div class="board-header">
+                <h2 id="currentBoardTitle">게시판 이름</h2>
+                <button id="writeBtn" class="main-btn" onclick="openPostModal()">글쓰기</button>
+            </div>
+            <div id="postList" class="post-list"></div>
+        </div>
 
-function handleJoin(event) {
-    event.preventDefault();
-    users.push({
-        name: document.getElementById('joinName').value,
-        empId: document.getElementById('joinEmpId').value,
-        rank: document.getElementById('joinRank').value, 
-        pw: document.getElementById('joinPw').value,
-        position: document.getElementById('joinPosition').value
-    });
-    alert("회원가입이 완료되었습니다.");
-    closeModal('joinModal');
-}
-
-function handleLogin() {
-    const empId = document.getElementById('loginEmpId').value;
-    const pw = document.getElementById('loginPw').value;
-    if (empId === "1" && pw === "1") successLogin({ empId: "1", position: "관리자", name: "관리자" });
-    else {
-        const user = users.find(u => u.empId === empId && u.pw === pw);
-        if (user) successLogin(user);
-        else alert("정보를 확인해주세요");
-    }
-}
-
-function successLogin(user) {
-    const userNum = user.empId.slice(-2).padStart(2, '0');
-    user.nickname = user.position === "관리자" ? "관리자" : `익명 ${userNum}`;
-    currentUser = user;
-    isLoggedIn = true;
-    document.getElementById('loginIcons').style.display = 'none';
-    document.getElementById('userInfoIcon').style.display = 'inline';
-    closeModal('loginModal');
-    alert(`${user.nickname}님 환영합니다!`);
-}
-
-function showUserInfo() {
-    alert(`내 정보\n닉네임: ${currentUser.nickname}\n사번: ${currentUser.empId}\n직급: ${currentUser.position}`);
-}
-
-function toggleMenu() {
-    const menu = document.getElementById('sideMenu');
-    menu.classList.toggle('active');
-    if (menu.classList.contains('active')) history.pushState({ state: 'menu' }, '');
-}
-
-function goHome() {
-    document.getElementById('homeView').style.display = 'block';
-    document.getElementById('boardView').style.display = 'none';
-    document.getElementById('postDetailView').style.display = 'none';
-    document.getElementById('sideMenu').classList.remove('active');
-}
-
-function loadBoard(name) {
-    if (!isLoggedIn) { alert("로그인을 해주세요"); return; }
-    if (currentUser.position !== "관리자") {
-        if (name === "매니저 라운지" && currentUser.position !== "매니저") { alert("매니저 전용입니다."); return; }
-        if (name === "책임 라운지" && currentUser.position !== "책임 매니저") { alert("책임 매니저 전용입니다."); return; }
-    }
-    
-    if (document.getElementById('sideMenu').classList.contains('active')) history.back();
-    
-    setTimeout(() => {
-        history.pushState({ view: 'board' }, '');
-        document.getElementById('homeView').style.display = 'none';
-        document.getElementById('boardView').style.display = 'block';
-        document.getElementById('postDetailView').style.display = 'none';
-        document.getElementById('currentBoardTitle').innerText = name;
-        
-        // 관리자일 경우 이미지 수정 버튼 노출
-        document.getElementById('adminImgEditBtn').style.display = (currentUser.position === "관리자") ? "block" : "none";
-        
-        // 해당 라운지 이미지 적용
-        document.getElementById('bgDisplay').src = loungeSettings[name].bg;
-        document.getElementById('profileDisplay').src = loungeSettings[name].profile;
-
-        document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
-        renderPosts(name);
-    }, 10);
-}
-
-// 관리자 이미지 저장 기능
-async function saveLoungeImages() {
-    const boardName = document.getElementById('currentBoardTitle').innerText;
-    const bgFile = document.getElementById('bgInput').files[0];
-    const profileFile = document.getElementById('profileInput').files[0];
-
-    if (bgFile) {
-        loungeSettings[boardName].bg = await toBase64(bgFile);
-    }
-    if (profileFile) {
-        loungeSettings[boardName].profile = await toBase64(profileFile);
-    }
-
-    document.getElementById('bgDisplay').src = loungeSettings[boardName].bg;
-    document.getElementById('profileDisplay').src = loungeSettings[boardName].profile;
-    
-    alert("이미지가 변경되었습니다.");
-    closeModal('imgEditModal');
-}
-
-const toBase64 = file => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-});
-
-function openPostModal() {
-    document.getElementById('postTitle').value = "";
-    document.getElementById('postContent').value = "";
-    openModal('postModal');
-}
-
-function savePost() {
-    const title = document.getElementById('postTitle').value.trim();
-    const content = document.getElementById('postContent').value.trim();
-    const board = document.getElementById('currentBoardTitle').innerText;
-    if (!title || !content) { alert("제목 혹은 글을 입력해주세요"); return; }
-
-    allPosts.unshift({
-        id: Date.now(),
-        board: board,
-        title: title,
-        content: content,
-        author: currentUser.nickname,
-        timestamp: new Date(),
-        likedBy: [], 
-        comments: [],
-        views: 0
-    });
-    renderPosts(board); 
-    closeModal('postModal'); 
-}
-
-function timeSince(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    if (seconds < 60) return "방금 전";
-    let interval = seconds / 3600;
-    if (interval >= 1) return Math.floor(interval) + "시간";
-    interval = seconds / 60;
-    if (interval >= 1) return Math.floor(interval) + "분";
-    return Math.floor(seconds / 86400) + "일";
-}
-
-function renderPosts(boardName) {
-    const listDiv = document.getElementById('postList');
-    const filtered = allPosts.filter(p => p.board === boardName);
-    if(filtered.length === 0) {
-        listDiv.innerHTML = '<p style="padding:20px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
-        return;
-    }
-    listDiv.innerHTML = filtered.map(p => {
-        const summary = p.content.length > 20 ? p.content.substring(0, 20) + "..." : p.content;
-        const isLiked = currentUser && p.likedBy.includes(currentUser.empId);
-        return `
-            <div class="post-item" onclick="openPostDetail(${p.id})">
-                <div class="post-user-info">
-                    <span class="nickname">${p.author}</span>
-                    <span class="post-date">${timeSince(p.timestamp)}</span>
+        <div id="postDetailView" style="display: none;">
+            <div class="detail-top-nav">
+                <i class="fas fa-chevron-left detail-back" onclick="closePostDetail()"></i>
+                <span class="detail-logo-text">H1 Blind</span>
+            </div>
+            <div class="detail-header-info">
+                <div class="detail-user-row">
+                    <span id="dtNickname" class="dt-nick">닉네임</span>
+                    <span id="dtTime" class="dt-time">방금 전</span>
                 </div>
-                <h4 class="post-title">${p.title}</h4>
-                <p class="post-summary">${summary}</p>
-                <div class="post-stats">
-                    <span onclick="event.stopPropagation(); toggleLike(${p.id})">
-                        <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> <small>${p.likedBy.length}</small>
-                    </span>
-                    <span><i class="far fa-comment"></i> <small>${p.comments.length}</small></span>
-                    <span><i class="far fa-eye"></i> <small>${p.views}</small></span>
+                <h2 id="dtTitle" class="dt-title">제목</h2>
+                <p id="dtContent" class="dt-content">내용</p>
+            </div>
+            <div class="detail-action-bar">
+                <div class="stat-item" onclick="handleLikeInDetail()" style="cursor:pointer;">
+                    <i id="dtLikeIcon" class="far fa-heart"></i> <small id="dtLikeCount">0</small>
+                </div>
+                <div class="stat-item">
+                    <i class="far fa-comment"></i> <small id="dtCommentCount">0</small>
                 </div>
             </div>
-        `;
-    }).join('');
-}
-
-function openPostDetail(id) {
-    const post = allPosts.find(p => p.id === id);
-    if(!post) return;
-    currentViewingPostId = id;
-    post.views++;
-    renderPosts(post.board);
-    document.getElementById('boardView').style.display = 'none';
-    document.getElementById('postDetailView').style.display = 'block';
-    document.getElementById('dtNickname').innerText = post.author;
-    document.getElementById('dtTime').innerText = timeSince(post.timestamp);
-    document.getElementById('dtTitle').innerText = post.title;
-    document.getElementById('dtContent').innerText = post.content;
-    updateDetailStats(post);
-    renderComments(post.comments);
-    history.pushState({ view: 'detail', postId: id }, '');
-}
-
-function closePostDetail() { history.back(); }
-
-function renderComments(comments) {
-    const list = document.getElementById('dtCommentList');
-    list.innerHTML = comments.map(c => `
-        <div class="dt-comment-item">
-            <div class="dt-comment-nick">${c.author}</div>
-            <div class="dt-comment-text">${c.text}</div>
+            <div class="detail-divider"></div>
+            <div id="dtCommentList" class="dt-comment-list"></div>
+            <div class="dt-input-area">
+                <input type="text" id="dtCommentInput" placeholder="댓글을 남겨주세요.">
+                <button onclick="submitComment()">등록</button>
+            </div>
         </div>
-    `).join('');
-}
+    </main>
 
-function submitComment() {
-    const input = document.getElementById('dtCommentInput');
-    const text = input.value.trim();
-    if(!text) return;
-    const post = allPosts.find(p => p.id === currentViewingPostId);
-    post.comments.push({ author: currentUser.nickname, text: text, timestamp: new Date() });
-    input.value = "";
-    renderComments(post.comments);
-    updateDetailStats(post);
-    renderPosts(post.board);
-}
+    <div id="imgEditModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('imgEditModal')">&times;</span>
+            <h2>라운지 이미지 변경</h2>
+            <div class="upload-group">
+                <label>배경 이미지 (800x200 권장)</label>
+                <input type="file" id="bgInput" accept="image/*">
+            </div>
+            <div class="upload-group">
+                <label>프로필 이미지 (100x100 권장)</label>
+                <input type="file" id="profileInput" accept="image/*">
+            </div>
+            <button class="main-btn" style="width:100%; margin-top:10px;" onclick="saveLoungeImages()">변경 내용 저장</button>
+        </div>
+    </div>
 
-function updateDetailStats(post) {
-    const isLiked = currentUser && post.likedBy.includes(currentUser.empId);
-    document.getElementById('dtLikeIcon').className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
-    document.getElementById('dtLikeCount').innerText = post.likedBy.length;
-    document.getElementById('dtCommentCount').innerText = post.comments.length;
-}
+    <div id="joinModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('joinModal')">&times;</span>
+            <h2>회원가입</h2>
+            <p class="join-warning">※ 사번은 ID로 사용됩니다. 정확한 사번을 기입해주세요.</p>
+            <form id="joinForm" onsubmit="handleJoin(event)">
+                <input type="text" id="joinEmpId" placeholder="사번" required inputmode="numeric">
+                <input type="password" id="joinPw" placeholder="비밀번호" required>
+                <input type="text" id="joinName" placeholder="이름" required inputmode="text">
+                <select id="joinPosition" required>
+                    <option value="" disabled selected>구분(매니저/책임) 선택</option>
+                    <option value="매니저">매니저</option>
+                    <option value="책임 매니저">책임 매니저</option>
+                </select>
+                <select id="joinRank" required>
+                    <option value="" disabled selected>직책 선택</option>
+                    <option value="공장장">공장장</option>
+                    <option value="부서장">부서장</option>
+                    <option value="팀장">팀장</option>
+                    <option value="보직과장">보직과장</option>
+                    <option value="해당없음">해당없음</option>
+                </select>
+                <button type="submit" class="main-btn" style="width:100%; margin-top:10px;">가입하기</button>
+            </form>
+        </div>
+    </div>
 
-function handleLikeInDetail() {
-    toggleLike(currentViewingPostId);
-    const post = allPosts.find(p => p.id === currentViewingPostId);
-    updateDetailStats(post);
-}
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>로그인</h2>
+            <input type="text" id="loginEmpId" placeholder="사번" inputmode="numeric">
+            <input type="password" id="loginPw" placeholder="비밀번호">
+            <div style="display:flex; justify-content:space-between; margin-top:15px;">
+                <button class="main-btn" style="background:#888;" onclick="closeModal('loginModal')">취소</button>
+                <button class="main-btn" onclick="handleLogin()">로그인</button>
+            </div>
+        </div>
+    </div>
 
-function toggleLike(id) {
-    if (!currentUser) return;
-    const post = allPosts.find(p => p.id === id);
-    const idx = post.likedBy.indexOf(currentUser.empId);
-    if (idx === -1) post.likedBy.push(currentUser.empId);
-    else post.likedBy.splice(idx, 1);
-    renderPosts(post.board);
-}
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('postModal')">&times;</span>
+            <h2>새 글 작성</h2>
+            <input type="text" id="postTitle" placeholder="제목을 입력하세요">
+            <textarea id="postContent" placeholder="내용을 입력하세요" rows="8"></textarea>
+            <button class="main-btn" style="width:100%;" onclick="savePost()">등록하기</button>
+        </div>
+    </div>
 
-window.addEventListener('click', function(event) {
-    if (event.target.closest('.modal-content')) return; 
-    if (event.target.classList.contains('modal')) { closeModal(event.target.id); return; }
-    const sideMenu = document.getElementById('sideMenu');
-    const menuBtn = document.querySelector('.header-left');
-    if (sideMenu && sideMenu.classList.contains('active') && !sideMenu.contains(event.target) && !menuBtn.contains(event.target)) {
-        history.back();
-    }
-}, true);
-
-window.onpopstate = function(event) {
-    document.querySelectorAll('.modal').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; });
-    const menu = document.getElementById('sideMenu');
-    if (menu && menu.classList.contains('active')) menu.classList.remove('active');
-    if (!(event.state && event.state.view === 'detail')) {
-        document.getElementById('postDetailView').style.display = 'none';
-        if (!event.state || event.state.view !== 'board') {
-            document.getElementById('homeView').style.display = 'block';
-            document.getElementById('boardView').style.display = 'none';
-        } else {
-            document.getElementById('boardView').style.display = 'block';
-        }
-    }
-};
+    <script src="script.js"></script>
+</body>
+</html>
