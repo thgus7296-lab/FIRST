@@ -114,6 +114,7 @@ function savePost() {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
+
     if (!title || !content) { alert("제목 혹은 글을 입력해주세요"); return; }
 
     allPosts.unshift({
@@ -127,8 +128,19 @@ function savePost() {
         comments: [],
         views: 0
     });
+
     renderPosts(board); 
     closeModal('postModal'); 
+}
+
+function timeSince(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return "방금 전";
+    let interval = seconds / 3600;
+    if (interval >= 1) return Math.floor(interval) + "시간";
+    interval = seconds / 60;
+    if (interval >= 1) return Math.floor(interval) + "분";
+    return Math.floor(seconds / 86400) + "일";
 }
 
 function renderPosts(boardName) {
@@ -139,6 +151,7 @@ function renderPosts(boardName) {
         return;
     }
     listDiv.innerHTML = filtered.map(p => {
+        const summary = p.content.length > 20 ? p.content.substring(0, 20) + "..." : p.content;
         const isLiked = currentUser && p.likedBy.includes(currentUser.empId);
         return `
             <div class="post-item" onclick="openPostDetail(${p.id})">
@@ -147,7 +160,7 @@ function renderPosts(boardName) {
                     <span class="post-date">${timeSince(p.timestamp)}</span>
                 </div>
                 <h4 class="post-title">${p.title}</h4>
-                <p class="post-summary">${p.content.substring(0, 20)}</p>
+                <p class="post-summary">${summary}</p>
                 <div class="post-stats">
                     <span onclick="event.stopPropagation(); toggleLike(${p.id})">
                         <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> <small>${p.likedBy.length}</small>
@@ -169,6 +182,7 @@ function openPostDetail(id) {
 
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'block';
+
     document.getElementById('dtNickname').innerText = post.author;
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
@@ -179,14 +193,31 @@ function openPostDetail(id) {
     history.pushState({ view: 'detail', postId: id }, '');
 }
 
-function closePostDetail() { history.back(); }
+function closePostDetail() {
+    history.back();
+}
+
+function renderComments(comments) {
+    const list = document.getElementById('dtCommentList');
+    list.innerHTML = comments.map(c => `
+        <div class="dt-comment-item">
+            <div class="dt-comment-nick">${c.author}</div>
+            <div class="dt-comment-text">${c.text}</div>
+        </div>
+    `).join('');
+}
 
 function submitComment() {
     const input = document.getElementById('dtCommentInput');
     const text = input.value.trim();
     if(!text) return;
+
     const post = allPosts.find(p => p.id === currentViewingPostId);
-    post.comments.push({ author: currentUser.nickname, text: text, timestamp: new Date() });
+    post.comments.push({
+        author: currentUser.nickname,
+        text: text,
+        timestamp: new Date()
+    });
     input.value = "";
     renderComments(post.comments);
     updateDetailStats(post);
@@ -200,6 +231,12 @@ function updateDetailStats(post) {
     document.getElementById('dtCommentCount').innerText = post.comments.length;
 }
 
+function handleLikeInDetail() {
+    toggleLike(currentViewingPostId);
+    const post = allPosts.find(p => p.id === currentViewingPostId);
+    updateDetailStats(post);
+}
+
 function toggleLike(id) {
     if (!currentUser) return;
     const post = allPosts.find(p => p.id === id);
@@ -209,36 +246,12 @@ function toggleLike(id) {
     renderPosts(post.board);
 }
 
-function handleLikeInDetail() {
-    toggleLike(currentViewingPostId);
-    updateDetailStats(allPosts.find(p => p.id === currentViewingPostId));
-}
-
-function timeSince(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    if (seconds < 60) return "방금 전";
-    let interval = seconds / 3600;
-    if (interval >= 1) return Math.floor(interval) + "시간";
-    interval = seconds / 60;
-    if (interval >= 1) return Math.floor(interval) + "분";
-    return Math.floor(seconds / 86400) + "일";
-}
-
-function renderComments(comments) {
-    const list = document.getElementById('dtCommentList');
-    list.innerHTML = comments.map(c => `
-        <div class="dt-comment-item">
-            <div class="dt-comment-nick">${c.author}</div>
-            <div class="dt-comment-text">${c.text}</div>
-        </div>
-    `).join('');
-}
-
 window.addEventListener('click', function(event) {
     if (event.target.closest('.modal-content')) return; 
     if (event.target.classList.contains('modal')) { closeModal(event.target.id); return; }
     const sideMenu = document.getElementById('sideMenu');
-    if (sideMenu && sideMenu.classList.contains('active') && !sideMenu.contains(event.target) && !document.querySelector('.header-left').contains(event.target)) {
+    const menuBtn = document.querySelector('.header-left');
+    if (sideMenu && sideMenu.classList.contains('active') && !sideMenu.contains(event.target) && !menuBtn.contains(event.target)) {
         history.back();
     }
 }, true);
@@ -247,13 +260,15 @@ window.onpopstate = function(event) {
     document.querySelectorAll('.modal').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; });
     const menu = document.getElementById('sideMenu');
     if (menu && menu.classList.contains('active')) menu.classList.remove('active');
-    if (!event.state || event.state.view !== 'detail') {
+    
+    if (event.state && event.state.view === 'detail') {
+    } else {
         document.getElementById('postDetailView').style.display = 'none';
-        if (event.state?.view === 'board') {
-            document.getElementById('boardView').style.display = 'block';
-        } else {
+        if (!event.state || event.state.view !== 'board') {
             document.getElementById('homeView').style.display = 'block';
             document.getElementById('boardView').style.display = 'none';
+        } else {
+            document.getElementById('boardView').style.display = 'block';
         }
     }
 };
