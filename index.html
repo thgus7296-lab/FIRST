@@ -56,8 +56,11 @@
 
         <div id="postDetailView" style="display: none;">
             <div class="detail-top-nav">
-                <i class="fas fa-chevron-left detail-back" onclick="closePostDetail()"></i>
-                <span class="detail-logo-text">H1 Blind</span>
+                <div style="display: flex; align-items: center;">
+                    <i class="fas fa-chevron-left detail-back" onclick="closePostDetail()"></i>
+                    <span class="detail-logo-text">H1 Blind</span>
+                </div>
+                <i id="deletePostBtn" class="fas fa-trash-alt" style="display:none; color:#ff4d4d; cursor:pointer;" onclick="deletePost()"></i>
             </div>
             <div class="detail-header-info">
                 <div class="detail-user-row">
