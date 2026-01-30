@@ -16,7 +16,10 @@
                 <i class="fas fa-user" style="margin-right: 10px;" onclick="openModal('loginModal')"></i>
                 <i class="fas fa-plus-circle" onclick="openModal('joinModal')"></i>
             </span>
-            <span id="userInfoIcon" style="display: none;" onclick="showUserInfo()"><i class="fas fa-user"></i></span>
+            <span id="userInfoIcon" style="display: none;">
+                <i class="fas fa-user" style="margin-right: 12px;" onclick="showUserInfo()"></i>
+                <i class="fas fa-sign-out-alt" onclick="handleLogout()"></i>
+            </span>
         </div>
     </header>
 
