@@ -1,24 +1,19 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
 .main-btn { background: #065d7a; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
 header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #ddd; background: #fff; position: sticky; top: 0; z-index: 100; }
-
 #userInfoIcon { display: flex; align-items: center; }
 #userInfoIcon i { cursor: pointer; font-size: 18px; color: #333; }
-
 .side-menu { position: fixed; left: -250px; top: 0; width: 250px; height: 100%; background: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: 0.3s; z-index: 200; padding: 20px; }
 .side-menu.active { left: 0; }
 .side-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; list-style: none; }
-
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
 .modal.active { display: block; }
 .modal-content { background: white; margin: 15vh auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; position: relative; z-index: 1001; }
 .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
 .close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #888; }
 .join-warning { color: #ff0000; font-weight: bold; font-size: 13px; margin-bottom: 15px; }
-
 .upload-group { margin-bottom: 15px; }
 .upload-group label { font-size: 13px; color: #666; display: block; margin-bottom: 5px; }
-
 .post-item { padding: 15px; border-bottom: 1px solid #f0f0f0; background: #fff; cursor: pointer; }
 .post-user-info { display: flex; align-items: center; margin-bottom: 8px; gap: 10px; }
 .nickname { font-weight: bold; font-size: 14px; color: #333; }
@@ -27,16 +22,13 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .post-summary { font-size: 14px; color: #666; line-height: 1.4; margin-bottom: 10px; }
 .post-stats { display: flex; gap: 15px; color: #888; font-size: 14px; }
 .fa-heart.liked { color: #ff0000 !important; }
-
 .board-visual-area { position: relative; width: 100%; margin-bottom: 40px; }
 .rect-banner { width: 100%; height: 160px; overflow: hidden; background: #eee; }
 .rect-banner img { width: 100%; height: 100%; object-fit: cover; }
 .circle-profile { position: absolute; bottom: -35px; left: 20px; width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; overflow: hidden; background: #fff; z-index: 10; }
 .circle-profile img { width: 100%; height: 100%; object-fit: cover; }
 .admin-edit-btn { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,0.5); color: #fff; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; z-index: 15; }
-
 .board-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; }
-
 #postDetailView { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 500; overflow-y: auto; }
 .detail-top-nav { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f1f1; position: sticky; top: 0; background: #fff; }
 .detail-back { font-size: 20px; margin-right: 15px; cursor: pointer; }
@@ -46,12 +38,10 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .dt-time { color: rgba(170, 170, 170, 0.7); font-size: 12px; }
 .dt-title { font-size: 22px; margin-bottom: 15px; line-height: 1.3; color: #111; }
 .dt-content { font-size: 16px; line-height: 1.6; color: #333; white-space: pre-wrap; margin-bottom: 20px; }
-
 .detail-action-bar { padding: 15px 20px; display: flex; gap: 20px; border-top: 1px solid #f1f1f1; color: #666; align-items: center; }
 .stat-item { display: flex; align-items: center; gap: 6px; }
 .stat-item i { font-size: 18px; }
 .stat-item small { font-size: 15px; line-height: 1; }
-
 .detail-divider { height: 8px; background: #f5f5f5; }
 .dt-comment-item { padding: 15px 20px; border-bottom: 1px solid #f9f9f9; }
 .dt-comment-nick { font-weight: bold; font-size: 13px; margin-bottom: 5px; }
