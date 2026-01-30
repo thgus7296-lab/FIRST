@@ -4,7 +4,6 @@ let users = [];
 let allPosts = []; 
 let currentViewingPostId = null;
 
-// 라운지별 이미지 관리 객체
 let loungeSettings = {
     '1공장 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
     '경제 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
@@ -63,9 +62,20 @@ function successLogin(user) {
     currentUser = user;
     isLoggedIn = true;
     document.getElementById('loginIcons').style.display = 'none';
-    document.getElementById('userInfoIcon').style.display = 'inline';
+    document.getElementById('userInfoIcon').style.display = 'flex'; // 아이콘 두 개라 flex 권장
     closeModal('loginModal');
     alert(`${user.nickname}님 환영합니다!`);
+}
+
+// 로그아웃 기능 추가
+function handleLogout() {
+    if (!confirm("로그아웃 하시겠습니까?")) return;
+    currentUser = null;
+    isLoggedIn = false;
+    document.getElementById('loginIcons').style.display = 'inline';
+    document.getElementById('userInfoIcon').style.display = 'none';
+    goHome(); // 로그아웃 시 홈으로 이동
+    alert("로그아웃 되었습니다.");
 }
 
 function showUserInfo() {
@@ -213,7 +223,6 @@ function openPostDetail(id) {
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
     
-    // 삭제 버튼 노출 여부 (작성자이거나 관리자인 경우)
     const canDelete = currentUser && (post.author === currentUser.nickname || currentUser.position === "관리자");
     document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
 
@@ -222,7 +231,6 @@ function openPostDetail(id) {
     history.pushState({ view: 'detail', postId: id }, '');
 }
 
-// 게시글 삭제 함수 추가
 function deletePost() {
     if (!confirm("정말 이 게시글을 삭제하시겠습니까?")) return;
     
