@@ -101,10 +101,8 @@ function loadBoard(name) {
         document.getElementById('postDetailView').style.display = 'none';
         document.getElementById('currentBoardTitle').innerText = name;
         
-        // 관리자일 경우 이미지 수정 버튼 노출
         document.getElementById('adminImgEditBtn').style.display = (currentUser.position === "관리자") ? "block" : "none";
         
-        // 해당 라운지 이미지 적용
         document.getElementById('bgDisplay').src = loungeSettings[name].bg;
         document.getElementById('profileDisplay').src = loungeSettings[name].profile;
 
@@ -113,18 +111,13 @@ function loadBoard(name) {
     }, 10);
 }
 
-// 관리자 이미지 저장 기능
 async function saveLoungeImages() {
     const boardName = document.getElementById('currentBoardTitle').innerText;
     const bgFile = document.getElementById('bgInput').files[0];
     const profileFile = document.getElementById('profileInput').files[0];
 
-    if (bgFile) {
-        loungeSettings[boardName].bg = await toBase64(bgFile);
-    }
-    if (profileFile) {
-        loungeSettings[boardName].profile = await toBase64(profileFile);
-    }
+    if (bgFile) loungeSettings[boardName].bg = await toBase64(bgFile);
+    if (profileFile) loungeSettings[boardName].profile = await toBase64(profileFile);
 
     document.getElementById('bgDisplay').src = loungeSettings[boardName].bg;
     document.getElementById('profileDisplay').src = loungeSettings[boardName].profile;
@@ -219,9 +212,28 @@ function openPostDetail(id) {
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
+    
+    // 삭제 버튼 노출 여부 (작성자이거나 관리자인 경우)
+    const canDelete = currentUser && (post.author === currentUser.nickname || currentUser.position === "관리자");
+    document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
+
     updateDetailStats(post);
     renderComments(post.comments);
     history.pushState({ view: 'detail', postId: id }, '');
+}
+
+// 게시글 삭제 함수 추가
+function deletePost() {
+    if (!confirm("정말 이 게시글을 삭제하시겠습니까?")) return;
+    
+    const postIdx = allPosts.findIndex(p => p.id === currentViewingPostId);
+    if (postIdx > -1) {
+        const boardName = allPosts[postIdx].board;
+        allPosts.splice(postIdx, 1);
+        alert("게시글이 삭제되었습니다.");
+        renderPosts(boardName);
+        closePostDetail();
+    }
 }
 
 function closePostDetail() { history.back(); }
