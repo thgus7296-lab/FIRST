@@ -1,139 +1,256 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>H1 Blind</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <header>
-        <div class="header-left" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
-        <div class="header-center" onclick="goHome()"><h1>H1 Blind</h1></div>
-        <div class="header-right">
-            <span id="loginIcons">
-                <i class="fas fa-user" style="margin-right: 10px;" onclick="openModal('loginModal')"></i>
-                <i class="fas fa-plus-circle" onclick="openModal('joinModal')"></i>
-            </span>
-            <span id="userInfoIcon" style="display: none;">
-                <i class="fas fa-user" style="margin-right: 12px;" onclick="showUserInfo()"></i>
-                <i class="fas fa-sign-out-alt" onclick="handleLogout()"></i>
-            </span>
-        </div>
-    </header>
+/* 전역 스타일 */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    font-family: 'Arial', sans-serif; 
+    -webkit-tap-highlight-color: transparent; /* 모바일 터치 시 하이라이트 제거 */
+}
 
-    <nav id="sideMenu" class="side-menu">
-        <div class="menu-content">
-            <h3>게시판 목록</h3>
-            <ul>
-                <li onclick="loadBoard('1공장 라운지')">1공장 라운지</li>
-                <li onclick="loadBoard('경제 라운지')">경제 라운지</li>
-                <li onclick="loadBoard('책임 라운지')">책임 라운지</li>
-                <li onclick="loadBoard('매니저 라운지')">매니저 라운지</li>
-                <li onclick="loadBoard('취미 라운지')">취미 라운지</li>
-                <li onclick="loadBoard('대나무 라운지')">대나무 라운지</li>
-            </ul>
-        </div>
-    </nav>
+body {
+    background-color: #fff;
+    color: #333;
+}
 
-    <main id="mainContent">
-        <div id="homeView">
-            <div class="image-placeholder" style="height:100px; background:#065d7a; color:#fff; display:flex; justify-content:center; align-items:center;">상단 배너 영역</div>
-            <div style="height:60px;"></div>
-            <div class="image-placeholder" style="height:300px; background:#eee; display:flex; justify-content:center; align-items:center;">메인 콘텐츠 영역</div>
-        </div>
+.main-btn { 
+    background: #065d7a; 
+    color: white; 
+    border: none; 
+    padding: 12px 20px; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    font-size: 14px;
+}
 
-        <div id="boardView" style="display: none;">
-            <div class="board-visual-area">
-                <div class="rect-banner"><img id="bgDisplay" src="https://via.placeholder.com/800x200" alt="배경"></div>
-                <div class="circle-profile"><img id="profileDisplay" src="https://via.placeholder.com/100x100" alt="프로필"></div>
-                <button id="adminImgEditBtn" class="admin-edit-btn" onclick="openModal('imgEditModal')" style="display:none;">이미지 수정</button>
-            </div>
-            <div class="board-header">
-                <h2 id="currentBoardTitle">게시판 이름</h2>
-                <button id="writeBtn" class="main-btn" onclick="openPostModal()">글쓰기</button>
-            </div>
-            <div id="postList" class="post-list"></div>
-        </div>
+/* 헤더 영역 */
+header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 20px; 
+    border-bottom: 1px solid #ddd; 
+    background: #fff; 
+    position: sticky; 
+    top: 0; 
+    z-index: 100; 
+    height: 60px;
+}
 
-        <div id="postDetailView" style="display: none;">
-            <div class="detail-top-nav">
-                <div style="display: flex; align-items: center;">
-                    <i class="fas fa-chevron-left detail-back" onclick="closePostDetail()"></i>
-                    <span class="detail-logo-text">H1 Blind</span>
-                </div>
-                <i id="deletePostBtn" class="fas fa-trash-alt" style="display:none; color:#ff4d4d; cursor:pointer;" onclick="deletePost()"></i>
-            </div>
-            <div class="detail-header-info">
-                <div class="detail-user-row">
-                    <span id="dtNickname" class="dt-nick">닉네임</span>
-                    <span id="dtTime" class="dt-time">방금 전</span>
-                </div>
-                <h2 id="dtTitle" class="dt-title">제목</h2>
-                <p id="dtContent" class="dt-content">내용</p>
-            </div>
-            <div class="detail-action-bar">
-                <div class="stat-item" onclick="handleLikeInDetail()" style="cursor:pointer;">
-                    <i id="dtLikeIcon" class="far fa-heart"></i> <small id="dtLikeCount">0</small>
-                </div>
-                <div class="stat-item">
-                    <i class="far fa-comment"></i> <small id="dtCommentCount">0</small>
-                </div>
-            </div>
-            <div class="detail-divider"></div>
-            <div id="dtCommentList" class="dt-comment-list"></div>
-            <div class="dt-input-area">
-                <input type="text" id="dtCommentInput" placeholder="댓글을 남겨주세요.">
-                <button onclick="submitComment()">등록</button>
-            </div>
-        </div>
-    </main>
+.header-center h1 {
+    font-size: 20px;
+    color: #065d7a;
+    cursor: pointer;
+}
 
-    <div id="joinModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('joinModal')">&times;</span>
-            <h2>회원가입</h2>
-            <form id="joinForm" onsubmit="handleJoin(event)">
-                <input type="text" id="joinEmpId" placeholder="사번" required inputmode="numeric">
-                <input type="password" id="joinPw" placeholder="비밀번호" required>
-                <input type="text" id="joinName" placeholder="이름" required>
-                <select id="joinPosition" required>
-                    <option value="" disabled selected>구분 선택</option>
-                    <option value="매니저">매니저</option>
-                    <option value="책임 매니저">책임 매니저</option>
-                </select>
-                <select id="joinRank" required>
-                    <option value="" disabled selected>직책 선택</option>
-                    <option value="공장장">공장장</option>
-                    <option value="부서장">부서장</option>
-                    <option value="팀장">팀장</option>
-                    <option value="해당없음">해당없음</option>
-                </select>
-                <button type="submit" class="main-btn" style="width:100%;">가입하기</button>
-            </form>
-        </div>
-    </div>
+.header-left, .header-right {
+    font-size: 20px;
+    cursor: pointer;
+    color: #555;
+    display: flex;
+    align-items: center;
+}
 
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <h2>로그인</h2>
-            <input type="text" id="loginEmpId" placeholder="사번">
-            <input type="password" id="loginPw" placeholder="비밀번호">
-            <button class="main-btn" style="width:100%;" onclick="handleLogin()">로그인</button>
-        </div>
-    </div>
+#userInfoIcon {
+    display: none; /* JS에서 제어 */
+    align-items: center;
+}
 
-    <div id="postModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('postModal')">&times;</span>
-            <h2>새 글 작성</h2>
-            <input type="text" id="postTitle" placeholder="제목">
-            <textarea id="postContent" rows="8" placeholder="내용"></textarea>
-            <button class="main-btn" style="width:100%;" onclick="savePost()">등록하기</button>
-        </div>
-    </div>
+/* 사이드 메뉴 */
+.side-menu { 
+    position: fixed; 
+    left: -250px; 
+    top: 0; 
+    width: 250px; 
+    height: 100%; 
+    background: #fff; 
+    box-shadow: 2px 0 10px rgba(0,0,0,0.15); 
+    transition: 0.3s ease-in-out; 
+    z-index: 200; 
+    padding: 20px; 
+}
 
-    <script type="module" src="script.js"></script>
-</body>
-</html>
+.side-menu.active { 
+    left: 0; 
+}
+
+.menu-content h3 {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #065d7a;
+    font-size: 18px;
+}
+
+.side-menu li { 
+    padding: 15px 10px; 
+    border-bottom: 1px solid #eee; 
+    cursor: pointer; 
+    list-style: none; 
+    font-size: 16px;
+}
+
+.side-menu li:hover {
+    background-color: #f9f9f9;
+}
+
+/* 메인 홈 뷰 */
+.image-placeholder {
+    width: 100%;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* 게시판 비주얼 영역 */
+.board-visual-area { position: relative; width: 100%; margin-bottom: 45px; }
+.rect-banner { width: 100%; height: 160px; overflow: hidden; background: #f0f0f0; }
+.rect-banner img { width: 100%; height: 100%; object-fit: cover; }
+.circle-profile { 
+    position: absolute; 
+    bottom: -35px; 
+    left: 20px; 
+    width: 85px; 
+    height: 85px; 
+    border-radius: 50%; 
+    border: 4px solid white; 
+    overflow: hidden; 
+    background: #fff; 
+    z-index: 10; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.circle-profile img { width: 100%; height: 100%; object-fit: cover; }
+
+.admin-edit-btn { 
+    position: absolute; 
+    right: 15px; 
+    bottom: 15px; 
+    background: rgba(0,0,0,0.6); 
+    color: #fff; 
+    border: none; 
+    padding: 6px 12px; 
+    border-radius: 4px; 
+    font-size: 12px; 
+    cursor: pointer; 
+    z-index: 15; 
+}
+
+.board-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 15px 20px; 
+    border-bottom: 1px solid #eee; 
+}
+
+/* 게시글 목록 아이템 */
+.post-item { padding: 20px; border-bottom: 1px solid #f0f0f0; background: #fff; cursor: pointer; }
+.post-user-info { display: flex; align-items: center; margin-bottom: 8px; gap: 10px; }
+.nickname { font-weight: bold; font-size: 14px; color: #333; }
+.post-date { color: #aaa; font-size: 12px; }
+.post-title { font-size: 17px; margin-bottom: 6px; color: #222; font-weight: 600; }
+.post-summary { font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 12px; }
+.post-stats { display: flex; gap: 15px; color: #888; font-size: 13px; }
+.post-stats i { margin-right: 3px; }
+.fa-heart.liked { color: #ff4d4d !important; }
+
+/* 게시글 상세 뷰 */
+#postDetailView { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: #fff; 
+    z-index: 500; 
+    overflow-y: auto; 
+}
+.detail-top-nav { 
+    padding: 15px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    border-bottom: 1px solid #f1f1f1; 
+    position: sticky; 
+    top: 0; 
+    background: #fff; 
+    z-index: 10;
+}
+.detail-back { font-size: 22px; margin-right: 15px; cursor: pointer; color: #333; }
+.detail-logo-text { font-weight: bold; font-size: 18px; color: #333; }
+.detail-header-info { padding: 25px 20px; }
+.dt-nick { font-weight: bold; font-size: 16px; color: #333; }
+.dt-time { color: #aaa; font-size: 12px; margin-left: 8px; }
+.dt-title { font-size: 24px; margin: 15px 0; line-height: 1.3; color: #111; font-weight: bold; }
+.dt-content { font-size: 16px; line-height: 1.7; color: #333; white-space: pre-wrap; margin-bottom: 30px; }
+
+.detail-action-bar { padding: 15px 20px; display: flex; gap: 25px; border-top: 1px solid #f1f1f1; color: #666; align-items: center; }
+.stat-item { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.stat-item i { font-size: 20px; }
+
+.detail-divider { height: 10px; background: #f5f5f5; }
+
+/* 댓글 영역 */
+.dt-comment-item { padding: 15px 20px; border-bottom: 1px solid #f9f9f9; }
+.dt-comment-nick { font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #444; }
+.dt-comment-text { font-size: 15px; line-height: 1.4; color: #333; }
+
+.dt-input-area { 
+    position: fixed; 
+    bottom: 0; 
+    left: 0; 
+    width: 100%; 
+    padding: 12px 15px; 
+    background: #fff; 
+    border-top: 1px solid #eee; 
+    display: flex; 
+    gap: 10px; 
+}
+.dt-input-area input { 
+    flex: 1; 
+    padding: 12px 18px; 
+    border: 1px solid #eee; 
+    border-radius: 25px; 
+    background: #f8f8f8; 
+    font-size: 15px; 
+    outline: none; 
+}
+.dt-input-area button { background: none; border: none; color: #065d7a; font-weight: bold; font-size: 16px; cursor: pointer; }
+
+/* 모달 스타일 */
+.modal { 
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.6); 
+    backdrop-filter: blur(2px);
+}
+.modal.active { display: block; }
+.modal-content { 
+    background: white; 
+    margin: 10vh auto; 
+    padding: 30px 25px; 
+    width: 90%; 
+    max-width: 400px; 
+    border-radius: 15px; 
+    position: relative; 
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+.modal-content h2 { margin-bottom: 20px; font-size: 22px; color: #222; }
+.modal-content input, .modal-content select, .modal-content textarea { 
+    width: 100%; 
+    padding: 14px; 
+    margin: 8px 0; 
+    border: 1px solid #ddd; 
+    border-radius: 8px; 
+    font-size: 16px; 
+    outline-color: #065d7a;
+}
+.close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #aaa; }
+.join-warning { color: #d9534f; font-weight: bold; font-size: 13px; margin-bottom: 15px; line-height: 1.4; }
+
+/* 관리자/기타 공통 */
+.upload-group { margin-bottom: 20px; }
+.upload-group label { font-size: 14px; color: #555; display: block; margin-bottom: 8px; font-weight: bold; }
