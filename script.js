@@ -379,6 +379,7 @@ window.onpopstate = (event) => {
         document.getElementById('boardView').style.display = 'block';
         document.getElementById('postDetailView').style.display = 'none';
         document.getElementById('currentBoardTitle').innerText = state.boardName;
+        renderPosts(state.boardName);
     } else if (state.view === 'detail') {
         document.getElementById('boardView').style.display = 'none';
         document.getElementById('postDetailView').style.display = 'block';
