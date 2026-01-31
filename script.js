@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, push, onValue, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// Firebase 설정
 const firebaseConfig = {
     apiKey: "AIzaSyDcrP_W-Kib7SZjWCwo319k_hCsA4pznmI",
     authDomain: "blind-cfc23.firebaseapp.com",
@@ -16,10 +15,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 상태 변수
-window.currentUser = null; 
+window.currentUser = null;
 window.isLoggedIn = false;
-window.allPosts = []; 
+window.allPosts = [];
 window.currentViewingPostId = null;
 
 let loungeSettings = {
@@ -31,41 +29,38 @@ let loungeSettings = {
     '대나무 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
-// ---------------------------------------------------------
-// [핵심] 모든 함수를 window 객체에 연결하여 HTML 호출 보장
-// ---------------------------------------------------------
-
+// --- 모달 제어 (뒤로가기 문제 해결) ---
 window.openModal = (id) => {
     const modal = document.getElementById(id);
-    if (modal) {
-        if (id === 'joinModal') document.getElementById('joinForm').reset();
-        modal.style.display = 'block';
-        setTimeout(() => modal.classList.add('active'), 150); 
-        history.pushState({ modalOpen: id }, ''); 
-    }
+    if (!modal) return;
+    if (id === 'joinModal') document.getElementById('joinForm').reset();
+    modal.style.display = 'block';
+    setTimeout(() => modal.classList.add('active'), 10);
+    history.pushState({ modalOpen: id }, ''); 
 };
 
 window.closeModal = (id) => {
     const modal = document.getElementById(id);
-    if (modal) {
+    if (modal && modal.style.display === 'block') {
         modal.style.display = 'none';
         modal.classList.remove('active');
         if (history.state && history.state.modalOpen === id) history.back();
     }
 };
 
-window.handleJoin = async (event) => {
-    event.preventDefault();
+// --- 로그인/회원가입 ---
+window.handleJoin = async (e) => {
+    e.preventDefault();
     const empId = document.getElementById('joinEmpId').value;
     const userData = {
         name: document.getElementById('joinName').value,
         empId: empId,
-        rank: document.getElementById('joinRank').value, 
+        rank: document.getElementById('joinRank').value,
         pw: document.getElementById('joinPw').value,
         position: document.getElementById('joinPosition').value
     };
     await set(ref(db, 'users/' + empId), userData);
-    alert("회원가입이 완료되었습니다.");
+    alert("회원가입 완료!");
     window.closeModal('joinModal');
 };
 
@@ -92,69 +87,58 @@ function successLogin(user) {
     document.getElementById('loginIcons').style.display = 'none';
     document.getElementById('userInfoIcon').style.display = 'flex';
     window.closeModal('loginModal');
-    alert(`${user.nickname}님 환영합니다!`);
 }
 
 window.handleLogout = () => {
-    if (!confirm("로그아웃 하시겠습니까?")) return;
     window.currentUser = null;
     window.isLoggedIn = false;
     document.getElementById('loginIcons').style.display = 'inline';
     document.getElementById('userInfoIcon').style.display = 'none';
     window.goHome();
-    alert("로그아웃 되었습니다.");
 };
 
 window.showUserInfo = () => {
     alert(`내 정보\n닉네임: ${window.currentUser.nickname}\n사번: ${window.currentUser.empId}\n직급: ${window.currentUser.position}`);
 };
 
-window.toggleMenu = () => {
-    const menu = document.getElementById('sideMenu');
-    menu.classList.toggle('active');
-};
+// --- 화면 전환 ---
+window.toggleMenu = () => document.getElementById('sideMenu').classList.toggle('active');
 
 window.goHome = () => {
     document.getElementById('homeView').style.display = 'block';
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'none';
     document.getElementById('sideMenu').classList.remove('active');
+    history.pushState({ view: 'home' }, '');
 };
 
 window.loadBoard = (name) => {
     if (!window.isLoggedIn) { alert("로그인을 해주세요"); return; }
     if (window.currentUser.position !== "관리자") {
-        if (name === "매니저 라운지" && window.currentUser.position !== "매니저") { alert("매니저 전용입니다."); return; }
-        if (name === "책임 라운지" && window.currentUser.position !== "책임 매니저") { alert("책임 매니저 전용입니다."); return; }
+        if (name === "매니저 라운지" && window.currentUser.position !== "매니저") { alert("매니저 전용"); return; }
+        if (name === "책임 라운지" && window.currentUser.position !== "책임 매니저") { alert("책임 전용"); return; }
     }
-    
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('postDetailView').style.display = 'none';
     document.getElementById('currentBoardTitle').innerText = name;
-    
     document.getElementById('bgDisplay').src = loungeSettings[name].bg;
     document.getElementById('profileDisplay').src = loungeSettings[name].profile;
-    document.getElementById('adminImgEditBtn').style.display = (window.currentUser.position === "관리자") ? "block" : "none";
-    
-    // [기능 복구] 대나무 라운지에서만 글쓰기 숨김
     document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
-    
     document.getElementById('sideMenu').classList.remove('active');
     renderPosts(name);
+    history.pushState({ view: 'board', boardName: name }, '');
 };
 
-// --- Firebase 실시간 동기화 ---
+// --- 게시글 로직 ---
 onValue(ref(db, 'posts'), (snapshot) => {
     const data = snapshot.val();
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp);
-    if (document.getElementById('boardView').style.display === 'block') {
-        renderPosts(document.getElementById('currentBoardTitle').innerText);
-    }
+    const currentTitle = document.getElementById('currentBoardTitle').innerText;
+    if (document.getElementById('boardView').style.display === 'block') renderPosts(currentTitle);
 });
 
-// [기능 복구] 글쓰기 모달 열기
 window.openPostModal = () => {
     document.getElementById('postTitle').value = "";
     document.getElementById('postContent').value = "";
@@ -165,21 +149,22 @@ window.savePost = async () => {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
-    if (!title || !content) { alert("제목 혹은 글을 입력해주세요"); return; }
+
+    if (!title || !content) {
+        alert("제목 혹은 글을 입력해주세요");
+        return;
+    }
 
     const postData = {
-        board: board,
-        title: title,
-        content: content,
+        board, title, content,
         author: window.currentUser.nickname,
         authorId: window.currentUser.empId,
         timestamp: Date.now(),
-        likedBy: {},
-        comments: {},
         views: 0
     };
 
     await push(ref(db, 'posts'), postData);
+    // [수정] 등록 후 모달 닫기 (history.back() 호출로 라운지 상태 유지)
     window.closeModal('postModal'); 
 };
 
@@ -190,30 +175,24 @@ function renderPosts(boardName) {
         listDiv.innerHTML = '<p style="padding:20px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
         return;
     }
-    listDiv.innerHTML = filtered.map(p => {
-        const summary = p.content.length > 20 ? p.content.substring(0, 20) + "..." : p.content;
-        const likedBy = p.likedBy || {};
-        const isLiked = window.currentUser && likedBy[window.currentUser.empId];
-        const commentCount = p.comments ? Object.keys(p.comments).length : 0;
-        
-        return `
-            <div class="post-item" onclick="openPostDetail('${p.id}')">
-                <div class="post-user-info">
-                    <span class="nickname">${p.author}</span>
-                    <span class="post-date">${timeSince(p.timestamp)}</span>
-                </div>
-                <h4 class="post-title">${p.title}</h4>
-                <p class="post-summary">${summary}</p>
-                <div class="post-stats">
-                    <span onclick="event.stopPropagation(); window.toggleLike('${p.id}')">
-                        <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> <small>${Object.keys(likedBy).length}</small>
-                    </span>
-                    <span><i class="far fa-comment"></i> <small>${commentCount}</small></span>
-                    <span><i class="far fa-eye"></i> <small>${p.views || 0}</small></span>
-                </div>
+    listDiv.innerHTML = filtered.map(p => `
+        <div class="post-item" onclick="openPostDetail('${p.id}')">
+            <div class="post-user-info">
+                <span class="nickname">${p.author}</span>
+                <span class="post-date">${timeSince(p.timestamp)}</span>
             </div>
-        `;
-    }).join('');
+            <h4 class="post-title">${p.title}</h4>
+            <p class="post-summary">${p.content.substring(0, 30)}...</p>
+            <div class="post-stats">
+                <span onclick="event.stopPropagation(); window.toggleLike('${p.id}')">
+                    <i class="${(p.likedBy && p.likedBy[window.currentUser.empId]) ? 'fas fa-heart liked' : 'far fa-heart'}"></i> 
+                    <small>${p.likedBy ? Object.keys(p.likedBy).length : 0}</small>
+                </span>
+                <span><i class="far fa-comment"></i> <small>${p.comments ? Object.keys(p.comments).length : 0}</small></span>
+                <span><i class="far fa-eye"></i> <small>${p.views || 0}</small></span>
+            </div>
+        </div>
+    `).join('');
 }
 
 window.openPostDetail = (id) => {
@@ -221,29 +200,26 @@ window.openPostDetail = (id) => {
     if(!post) return;
     window.currentViewingPostId = id;
     update(ref(db, `posts/${id}`), { views: (post.views || 0) + 1 });
-
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'block';
     document.getElementById('dtNickname').innerText = post.author;
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
-    
     const canDelete = window.currentUser && (post.authorId === window.currentUser.empId || window.currentUser.position === "관리자");
     document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
-
     updateDetailStats(post);
     renderComments(post.comments);
     history.pushState({ view: 'detail', postId: id }, '');
 };
 
+window.closePostDetail = () => history.back();
+
 window.deletePost = async () => {
-    if (!confirm("정말 이 게시글을 삭제하시겠습니까?")) return;
+    if (!confirm("삭제하시겠습니까?")) return;
     await remove(ref(db, `posts/${window.currentViewingPostId}`));
     window.closePostDetail();
 };
-
-window.closePostDetail = () => { history.back(); };
 
 function renderComments(commentsObj) {
     const list = document.getElementById('dtCommentList');
@@ -259,18 +235,16 @@ function renderComments(commentsObj) {
 
 window.submitComment = async () => {
     const input = document.getElementById('dtCommentInput');
-    const text = input.value.trim();
-    if(!text) return;
+    if(!input.value.trim()) return;
     await push(ref(db, `posts/${window.currentViewingPostId}/comments`), {
         author: window.currentUser.nickname,
-        text: text,
+        text: input.value.trim(),
         timestamp: Date.now()
     });
     input.value = "";
 };
 
 window.toggleLike = async (id) => {
-    if (!window.currentUser) return;
     const postRef = ref(db, `posts/${id}/likedBy`);
     const snapshot = await get(postRef);
     let likedBy = snapshot.val() || {};
@@ -283,8 +257,7 @@ window.handleLikeInDetail = () => window.toggleLike(window.currentViewingPostId)
 
 function updateDetailStats(post) {
     const likedBy = post.likedBy || {};
-    const isLiked = window.currentUser && likedBy[window.currentUser.empId];
-    document.getElementById('dtLikeIcon').className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
+    document.getElementById('dtLikeIcon').className = likedBy[window.currentUser.empId] ? 'fas fa-heart liked' : 'far fa-heart';
     document.getElementById('dtLikeCount').innerText = Object.keys(likedBy).length;
     document.getElementById('dtCommentCount').innerText = post.comments ? Object.keys(post.comments).length : 0;
 }
@@ -292,12 +265,34 @@ function updateDetailStats(post) {
 function timeSince(date) {
     const seconds = Math.floor((new Date() - date) / 1000);
     if (seconds < 60) return "방금 전";
-    let interval = seconds / 3600;
-    if (interval >= 1) return Math.floor(interval) + "시간 전";
-    interval = seconds / 60;
-    if (interval >= 1) return Math.floor(interval) + "분 전";
+    if (seconds < 3600) return Math.floor(seconds / 60) + "분 전";
+    if (seconds < 86400) return Math.floor(seconds / 3600) + "시간 전";
     return Math.floor(seconds / 86400) + "일 전";
 }
+
+// --- 브라우저 뒤로가기 통합 관리 ---
+window.onpopstate = (event) => {
+    // 1. 모든 모달 닫기
+    document.querySelectorAll('.modal').forEach(m => {
+        m.style.display = 'none';
+        m.classList.remove('active');
+    });
+
+    const state = event.state;
+    if (!state || state.view === 'home') {
+        document.getElementById('homeView').style.display = 'block';
+        document.getElementById('boardView').style.display = 'none';
+        document.getElementById('postDetailView').style.display = 'none';
+    } else if (state.view === 'board') {
+        document.getElementById('homeView').style.display = 'none';
+        document.getElementById('boardView').style.display = 'block';
+        document.getElementById('postDetailView').style.display = 'none';
+        document.getElementById('currentBoardTitle').innerText = state.boardName;
+    } else if (state.view === 'detail') {
+        document.getElementById('boardView').style.display = 'none';
+        document.getElementById('postDetailView').style.display = 'block';
+    }
+};
 
 window.saveLoungeImages = async () => {
     const boardName = document.getElementById('currentBoardTitle').innerText;
@@ -315,17 +310,3 @@ const toBase64 = file => new Promise((resolve) => {
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
 });
-
-// 이벤트 리스너
-window.onpopstate = (event) => {
-    document.querySelectorAll('.modal').forEach(m => { m.style.display = 'none'; m.classList.remove('active'); });
-    if (!(event.state && event.state.view === 'detail')) {
-        document.getElementById('postDetailView').style.display = 'none';
-        if (!event.state || event.state.view !== 'board') {
-            document.getElementById('homeView').style.display = 'block';
-            document.getElementById('boardView').style.display = 'none';
-        } else {
-            document.getElementById('boardView').style.display = 'block';
-        }
-    }
-};
