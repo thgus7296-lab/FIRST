@@ -223,28 +223,45 @@ window.savePost = async () => {
 function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     const filtered = window.allPosts.filter(p => p.board === boardName);
+    
     if(filtered.length === 0) {
         listDiv.innerHTML = '<p style="padding:20px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
         return;
     }
-    listDiv.innerHTML = filtered.map(p => `
-        <div class="post-item" onclick="openPostDetail('${p.id}')">
-            <div class="post-user-info">
-                <span class="nickname">${p.author}</span>
-                <span class="post-date">${timeSince(p.timestamp)}</span>
+
+    listDiv.innerHTML = filtered.map(p => {
+        // 🔥 [사장님 요청사항: 내용 표출 로직 적용]
+        const firstLine = p.content.split('\n')[0]; // 첫 번째 줄만 추출
+        let displayContent = "";
+
+        // 1. 첫 줄이 10글자 이하이고 전체 내용에 줄 바꿈이 없을 때
+        if (p.content.length <= 10 && !p.content.includes('\n')) {
+            displayContent = p.content;
+        } 
+        // 2~4. 그 외 (10글자 초과 혹은 줄 바꿈이 있는 모든 경우)
+        else {
+            displayContent = firstLine.substring(0, 10) + "...";
+        }
+
+        return `
+            <div class="post-item" onclick="openPostDetail('${p.id}')">
+                <div class="post-user-info">
+                    <span class="nickname" style="font-weight: bold;">${p.author}</span>
+                    <span class="post-date">${timeSince(p.timestamp)}</span>
+                </div>
+                <h4 class="post-title" style="font-weight: bold;">${p.title}</h4>
+                <p class="post-summary">${displayContent}</p>
+                <div class="post-stats">
+                    <span onclick="event.stopPropagation(); window.toggleLike('${p.id}')">
+                        <i class="${(p.likedBy && p.likedBy[window.currentUser.empId]) ? 'fas fa-heart liked' : 'far fa-heart'}"></i> 
+                        <small>${p.likedBy ? Object.keys(p.likedBy).length : 0}</small>
+                    </span>
+                    <span><i class="far fa-comment"></i> <small>${p.comments ? Object.keys(p.comments).length : 0}</small></span>
+                    <span><i class="far fa-eye"></i> <small>${p.views || 0}</small></span>
+                </div>
             </div>
-            <h4 class="post-title">${p.title}</h4>
-            <p class="post-summary">${p.content.substring(0, 30)}...</p>
-            <div class="post-stats">
-                <span onclick="event.stopPropagation(); window.toggleLike('${p.id}')">
-                    <i class="${(p.likedBy && p.likedBy[window.currentUser.empId]) ? 'fas fa-heart liked' : 'far fa-heart'}"></i> 
-                    <small>${p.likedBy ? Object.keys(p.likedBy).length : 0}</small>
-                </span>
-                <span><i class="far fa-comment"></i> <small>${p.comments ? Object.keys(p.comments).length : 0}</small></span>
-                <span><i class="far fa-eye"></i> <small>${p.views || 0}</small></span>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 window.openPostDetail = (id) => {
