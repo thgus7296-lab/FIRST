@@ -311,9 +311,12 @@ window.submitComment = async () => {
         text: input.value.trim(),
         timestamp: Date.now()
     };
-    // 5️⃣ UI 즉시 반영
+// 5️⃣ UI 즉시 반영
     renderComments(post.comments);
     updateDetailStats(post);
+    // 🔥 [사장님 지시사항 수정] 목록 화면의 댓글 수도 즉시 갱신
+    const boardName = document.getElementById('currentBoardTitle').innerText;
+    renderPosts(boardName);
     // 6️⃣ Firebase 저장 (백엔드용)
     await push(
         ref(db, `posts/${post.id}/comments`),
