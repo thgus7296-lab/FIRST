@@ -288,22 +288,51 @@ function renderComments(commentsObj) {
 
 window.submitComment = async () => {
     const input = document.getElementById('dtCommentInput');
-    if(!input.value.trim()) return;
-    await push(ref(db, `posts/${window.currentViewingPostId}/comments`), {
+    if (!input.value.trim()) return;
+    // 1️⃣ 현재 보고 있는 게시글 찾기
+    const post = window.allPosts.find(
+        p => p.id === window.currentViewingPostId
+    );
+    if (!post) return;
+    // 2️⃣ comments 없으면 생성
+    post.comments = post.comments || {};
+    // 3️⃣ 임시 ID 생성 (화면용)
+    const tempId = Date.now();
+    // 4️⃣ JS 메모리에 먼저 댓글 추가 (🔥 핵심)
+    post.comments[tempId] = {
         author: window.currentUser.nickname,
         text: input.value.trim(),
         timestamp: Date.now()
-    });
+    };
+    // 5️⃣ UI 즉시 반영
+    renderComments(post.comments);
+    updateDetailStats(post);
+    // 6️⃣ Firebase 저장 (백엔드용)
+    await push(
+        ref(db, `posts/${post.id}/comments`),
+        post.comments[tempId]
+    );
+    // 7️⃣ 입력창 초기화
     input.value = "";
 };
 
+
 window.toggleLike = async (id) => {
-    const postRef = ref(db, `posts/${id}/likedBy`);
-    const snapshot = await get(postRef);
-    let likedBy = snapshot.val() || {};
-    if (likedBy[window.currentUser.empId]) delete likedBy[window.currentUser.empId];
-    else likedBy[window.currentUser.empId] = true;
-    await set(postRef, likedBy);
+    const post = window.allPosts.find(p => p.id === id);
+    if (!post) return;
+    // 1️⃣ UI용 likedBy 먼저 수정
+    post.likedBy = post.likedBy || {};
+    if (post.likedBy[window.currentUser.empId]) {
+        delete post.likedBy[window.currentUser.empId];
+    } else {
+        post.likedBy[window.currentUser.empId] = true;
+    }
+    // 2️⃣ 즉시 UI 반영
+    updateDetailStats(post);
+    const boardName = document.getElementById('currentBoardTitle').innerText;
+    renderPosts(boardName);
+    // 3️⃣ Firebase에 반영
+    await set(ref(db, `posts/${id}/likedBy`), post.likedBy);
 };
 
 window.handleLikeInDetail = () => window.toggleLike(window.currentViewingPostId);
