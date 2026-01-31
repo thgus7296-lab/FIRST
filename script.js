@@ -212,6 +212,8 @@ window.savePost = async () => {
 
     try {
         await push(ref(db, 'posts'), postData);
+        // 🔥 저장 후 목록 강제 갱신
+        renderPosts(board); 
         window.closeModal('postModal');
     } catch (err) {
         alert("저장에 실패했습니다: " + err.message);
@@ -282,12 +284,26 @@ window.closePostDetail = () => {
 
 window.deletePost = async () => {
     if (!confirm("삭제하시겠습니까?")) return;
+    
     const boardName = document.getElementById('currentBoardTitle').innerText;
-    await remove(ref(db, `posts/${window.currentViewingPostId}`));
-    // 🔥 즉시 목록 갱신
-    window.currentViewingPostId = null;
-    renderPosts(boardName);
-    history.back();
+    const postId = window.currentViewingPostId;
+
+    try {
+        await remove(ref(db, `posts/${postId}`));
+        
+        // 🔥 history.back() 대신 직접 화면 전환을 처리하여 홈으로 튕기는 현상 방지
+        window.currentViewingPostId = null;
+        document.getElementById('postDetailView').style.display = 'none';
+        document.getElementById('boardView').style.display = 'block';
+        renderPosts(boardName);
+        
+        // 히스토리 상태를 게시판 목록으로 강제 변경
+        history.replaceState({ view: 'board', boardName: boardName }, '');
+        
+        alert("삭제되었습니다.");
+    } catch (err) {
+        alert("삭제 중 오류 발생: " + err.message);
+    }
 };
 
 
@@ -375,32 +391,31 @@ function timeSince(date) {
 // --- 브라우저 뒤로가기 통합 관리 ---
 window.onpopstate = (event) => {
     const state = event.state;
+    const detailView = document.getElementById('postDetailView');
 
-    // 1. 모달이 열려있는 상태에서 뒤로가기가 발생한 경우 (예: 글쓰기 창 닫기)
-    // 이 경우에는 화면 전환(goHome)을 하지 않고 모달만 닫고 종료합니다.
+    // 1. 모달 닫기 처리
     if (state && state.modalOpen) {
         document.querySelectorAll('.modal').forEach(m => {
             m.style.display = 'none';
             m.classList.remove('active');
         });
-        return; // 여기서 로직 종료 (홈으로 튕기지 않음)
+        return;
     }
 
-    // 2. 일반적인 화면 전환 뒤로가기 처리
-    if (!state || state.view === 'home' || state.view === 'board') {
-        // 게시판 목록에서 뒤로가기 시 홈으로 이동
-        window.goHome(); 
-    } else if (state.view === 'detail') {
-        // 상세에서 뒤로가기 시 목록으로 이동
+    // 2. 상세페이지에서 목록으로 나가는 경우 (물리 버튼 포함)
+    // 현재 상세페이지가 켜져 있다면 목록으로 보냅니다.
+    if (detailView.style.display === 'block') {
+        const boardName = document.getElementById('currentBoardTitle').innerText;
         document.getElementById('homeView').style.display = 'none';
         document.getElementById('boardView').style.display = 'block';
-        document.getElementById('postDetailView').style.display = 'none';
-        
-        const boardName = document.getElementById('currentBoardTitle').innerText;
-        if (typeof renderPosts === 'function') {
-            renderPosts(boardName);
-        }
+        detailView.style.display = 'none';
+        window.currentViewingPostId = null;
+        renderPosts(boardName);
+        return;
     }
+
+    // 3. 그 외 (목록에서 뒤로가기 등)는 무조건 홈으로
+    window.goHome();
 };
 
 window.saveLoungeImages = async () => {
