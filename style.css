@@ -3,8 +3,21 @@
 header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #ddd; background: #fff; position: sticky; top: 0; z-index: 100; }
 #userInfoIcon { display: flex; align-items: center; }
 #userInfoIcon i { cursor: pointer; font-size: 18px; color: #333; }
-.side-menu { position: fixed; left: -250px; top: 0; width: 250px; height: 100%; background: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: 0.3s; z-index: 200; padding: 20px; }
-.side-menu.active { left: 0; }
+.side-menu {
+    position: fixed;
+    top: 0;
+    left: -280px; /* 다시 왼쪽으로 숨김 */
+    width: 280px;
+    height: 100%;
+    background: #fff;
+    z-index: 200;
+    transition: 0.3s;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.side-menu.active {
+    left: 0; /* 열릴 때만 나타남 */
+}
 .side-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; list-style: none; }
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
 .modal.active { display: block; }
