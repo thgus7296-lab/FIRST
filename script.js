@@ -29,7 +29,7 @@ let loungeSettings = {
     '대나무 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
-// --- 모달 제어 (뒤로가기 문제 해결) ---
+// --- 모달 제어 및 외부 클릭 닫기 ---
 window.openModal = (id) => {
     const modal = document.getElementById(id);
     if (!modal) return;
@@ -41,12 +41,26 @@ window.openModal = (id) => {
 
 window.closeModal = (id) => {
     const modal = document.getElementById(id);
-    if (modal && modal.style.display === 'block') {
+    if (modal && (modal.style.display === 'block' || modal.classList.contains('active'))) {
         modal.style.display = 'none';
         modal.classList.remove('active');
         if (history.state && history.state.modalOpen === id) history.back();
     }
 };
+
+// 외부 클릭 시 모달 닫기
+window.closeModalByOutside = (event, id) => {
+    if (event.target.id === id) window.closeModal(id);
+};
+
+// 사이드 메뉴 외부 클릭 닫기
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('sideMenu');
+    const headerLeft = document.querySelector('.header-left');
+    if (menu.classList.contains('active') && !menu.contains(e.target) && !headerLeft.contains(e.target)) {
+        menu.classList.remove('active');
+    }
+});
 
 // --- 로그인/회원가입 ---
 window.handleJoin = async (e) => {
@@ -130,11 +144,21 @@ window.loadBoard = (name) => {
     history.pushState({ view: 'board', boardName: name }, '');
 };
 
-// --- 게시글 로직 ---
+// --- 게시글 로직 (실시간 연동) ---
 onValue(ref(db, 'posts'), (snapshot) => {
     const data = snapshot.val();
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp);
+    
+    // 현재 상세페이지를 보고 있다면 상세 데이터도 즉시 갱신
+    if (window.currentViewingPostId) {
+        const updatedPost = window.allPosts.find(p => p.id === window.currentViewingPostId);
+        if (updatedPost) {
+            updateDetailStats(updatedPost);
+            renderComments(updatedPost.comments);
+        }
+    }
+
     const currentTitle = document.getElementById('currentBoardTitle').innerText;
     if (document.getElementById('boardView').style.display === 'block') renderPosts(currentTitle);
 });
@@ -160,12 +184,17 @@ window.savePost = async () => {
         author: window.currentUser.nickname,
         authorId: window.currentUser.empId,
         timestamp: Date.now(),
-        views: 0
+        views: 0,
+        likedBy: {},
+        comments: {}
     };
 
-    await push(ref(db, 'posts'), postData);
-    // [수정] 등록 후 모달 닫기 (history.back() 호출로 라운지 상태 유지)
-    window.closeModal('postModal'); 
+    try {
+        await push(ref(db, 'posts'), postData);
+        window.closeModal('postModal');
+    } catch (err) {
+        alert("저장에 실패했습니다: " + err.message);
+    }
 };
 
 function renderPosts(boardName) {
@@ -199,21 +228,29 @@ window.openPostDetail = (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if(!post) return;
     window.currentViewingPostId = id;
+    
+    // 조회수 증가
     update(ref(db, `posts/${id}`), { views: (post.views || 0) + 1 });
+    
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'block';
     document.getElementById('dtNickname').innerText = post.author;
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
+    
     const canDelete = window.currentUser && (post.authorId === window.currentUser.empId || window.currentUser.position === "관리자");
     document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
+    
     updateDetailStats(post);
     renderComments(post.comments);
     history.pushState({ view: 'detail', postId: id }, '');
 };
 
-window.closePostDetail = () => history.back();
+window.closePostDetail = () => {
+    window.currentViewingPostId = null;
+    history.back();
+};
 
 window.deletePost = async () => {
     if (!confirm("삭제하시겠습니까?")) return;
@@ -257,7 +294,7 @@ window.handleLikeInDetail = () => window.toggleLike(window.currentViewingPostId)
 
 function updateDetailStats(post) {
     const likedBy = post.likedBy || {};
-    document.getElementById('dtLikeIcon').className = likedBy[window.currentUser.empId] ? 'fas fa-heart liked' : 'far fa-heart';
+    document.getElementById('dtLikeIcon').className = (window.currentUser && likedBy[window.currentUser.empId]) ? 'fas fa-heart liked' : 'far fa-heart';
     document.getElementById('dtLikeCount').innerText = Object.keys(likedBy).length;
     document.getElementById('dtCommentCount').innerText = post.comments ? Object.keys(post.comments).length : 0;
 }
@@ -272,7 +309,6 @@ function timeSince(date) {
 
 // --- 브라우저 뒤로가기 통합 관리 ---
 window.onpopstate = (event) => {
-    // 1. 모든 모달 닫기
     document.querySelectorAll('.modal').forEach(m => {
         m.style.display = 'none';
         m.classList.remove('active');
