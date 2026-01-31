@@ -172,7 +172,7 @@ window.openPostModal = () => {
 };
 
 window.savePost = async () => {
-
+    console.log("🔥 등록 버튼 눌림");
         // 로그인 검증
     if (!window.isLoggedIn || !window.currentUser) {
         alert("로그인 후 작성 가능합니다");
