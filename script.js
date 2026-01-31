@@ -170,6 +170,13 @@ window.openPostModal = () => {
 };
 
 window.savePost = async () => {
+
+        // 로그인 검증
+    if (!window.isLoggedIn || !window.currentUser) {
+        alert("로그인 후 작성 가능합니다");
+        return;
+    }
+    
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
