@@ -150,9 +150,8 @@ window.loadBoard = (name) => {
     document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
     document.getElementById('sideMenu').classList.remove('active');
 renderPosts(name);
-    // 🔥 [버그 수정] pushState 대신 replaceState를 사용하여 히스토리가 쌓이는 것을 방지합니다.
-    // 이렇게 하면 어떤 게시판으로 이동하든, '뒤로가기' 시 바로 이전의 '홈'으로 이동하게 됩니다.
-    history.replaceState({ view: 'board', boardName: name }, '');
+    // 히스토리를 쌓아주어야 뒤로가기 버튼을 눌렀을 때 웹이 종료되지 않고 onpopstate가 작동합니다.
+    history.pushState({ view: 'board', boardName: name }, '');
 };
 
 // --- 게시글 로직 (실시간 연동) ---
@@ -284,6 +283,7 @@ window.openPostDetail = (id) => {
     
     updateDetailStats(post);
     renderComments(post.comments);
+    // 현재 상태가 '상세보기'임을 브라우저에 기록
     history.pushState({ view: 'detail', postId: id }, '');
 };
 
@@ -463,3 +463,41 @@ const toBase64 = file => new Promise((resolve) => {
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
 });
+
+// --- 브라우저 뒤로가기 통합 관리 (사장님 지시사항 반영) ---
+window.onpopstate = (event) => {
+    const state = event.state;
+    const detailView = document.getElementById('postDetailView');
+    const boardView = document.getElementById('boardView');
+
+    // 1. 모달이 열려 있는 상태에서 뒤로가기 시 모달만 닫기
+    if (state && state.modalOpen) {
+        document.querySelectorAll('.modal').forEach(m => {
+            m.style.display = 'none';
+            m.classList.remove('active');
+        });
+        return; 
+    }
+
+    // 2. 게시글 상세보기 화면일 때 뒤로가기 -> 목록 화면으로 이동
+    if (detailView.style.display === 'block') {
+        const boardName = document.getElementById('currentBoardTitle').innerText;
+        detailView.style.display = 'none';
+        boardView.style.display = 'block';
+        window.currentViewingPostId = null;
+        renderPosts(boardName);
+        return;
+    }
+
+    // 3. 게시판 목록 화면일 때 뒤로가기 -> 무조건 홈(메인)으로 이동
+    // 어떤 라운지에서 다른 라운지로 이동했어도, 뒤로가기 시에는 메인 화면으로 빠집니다.
+    if (boardView.style.display === 'block') {
+        window.goHome();
+        return;
+    }
+
+    // 4. 기타 상황 (홈 화면 등)
+    document.getElementById('homeView').style.display = 'block';
+    document.getElementById('boardView').style.display = 'none';
+    document.getElementById('postDetailView').style.display = 'none';
+};
