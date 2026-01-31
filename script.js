@@ -1,7 +1,7 @@
-console.log("🔥 script.js 로드됨");
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, push, onValue, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+console.log("🔥 script.js 로드됨");
 
 const firebaseConfig = {
     apiKey: "AIzaSyDcrP_W-Kib7SZjWCwo319k_hCsA4pznmI",
@@ -11,7 +11,8 @@ const firebaseConfig = {
     messagingSenderId: "886741832017",
     appId: "1:886741832017:web:43056d5336da52e5348370",
     measurementId: "G-4LX1Z4QGYK",
-    databaseURL: "https://blind-cfc23-default-rtdb.firebaseio.com"
+    databaseURL: "https://blind-cfc23-default-rtdb.asia-southeast1.firebasedatabase.app"
+
 };
 
 const app = initializeApp(firebaseConfig);
