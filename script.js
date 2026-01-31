@@ -1,8 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, push, onValue, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-console.log("🔥 script.js 로드됨");
-
 const firebaseConfig = {
     apiKey: "AIzaSyDcrP_W-Kib7SZjWCwo319k_hCsA4pznmI",
     authDomain: "blind-cfc23.firebaseapp.com",
@@ -173,7 +171,6 @@ window.openPostModal = () => {
 };
 
 window.savePost = async () => {
-    console.log("🔥 등록 버튼 눌림");
         // 로그인 검증
     if (!window.isLoggedIn || !window.currentUser) {
         alert("로그인 후 작성 가능합니다");
