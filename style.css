@@ -23,14 +23,13 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 
 /* 게시판 목록 아이템 (li) - 사장님 원본 스타일 기반 복구 */
 .side-menu li { 
-    padding: 15px 20px; /* 상하 15px, 좌우 20px로 글자 간격 조정 */
+    padding: 12px 20px; /* 상하를 12px로 줄여 더 촘촘하게, 좌우 20px로 정렬 */
     border-bottom: 1px solid #eee; 
     cursor: pointer; 
-    list-style: none; 
-    font-size: 15px; /* 글자 크기 복구 */
-    font-weight: normal; /* 굵기 복구 */
+    list-style: none;
+    font-size: 14px; /* 글자 크기를 1px 더 줄여 원래 느낌 복구 */
     color: #333;
-    transition: background 0.2s;
+    font-weight: normal;
 }
 
 /* 클릭 시 시각적 피드백 */
