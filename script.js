@@ -122,7 +122,14 @@ window.showUserInfo = () => {
 };
 
 // --- 화면 전환 ---
-window.toggleMenu = () => document.getElementById('sideMenu').classList.toggle('active');
+window.toggleMenu = () => {
+    const menu = document.getElementById('sideMenu');
+    const isActive = menu.classList.toggle('active');
+    // 메뉴가 열릴 때만 히스토리에 기록을 남겨서 뒤로가기 대응
+    if (isActive) {
+        history.pushState({ menuOpen: true }, '');
+    }
+};
 
 window.goHome = () => {
     document.getElementById('homeView').style.display = 'block';
@@ -178,9 +185,14 @@ window.loadBoard = (name) => {
     document.getElementById('profileDisplay').src = setting.profile;
     
     document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
-    document.getElementById('sideMenu').classList.remove('active');
-    renderPosts(name);
     
+    // 메뉴가 열려있는 상태에서 클릭했다면 히스토리를 뒤로 돌려 menuOpen 상태 제거
+    const menu = document.getElementById('sideMenu');
+    if (menu.classList.contains('active')) {
+        history.back();
+    }
+    
+    renderPosts(name);
     history.pushState({ view: 'board', boardName: name }, '');
 };
 
@@ -505,10 +517,17 @@ const toBase64 = file => new Promise((resolve) => {
 // --- 브라우저 뒤로가기 통합 관리 (사장님 지시사항 반영) ---
 window.onpopstate = (event) => {
     const state = event.state;
+    const menu = document.getElementById('sideMenu');
     const detailView = document.getElementById('postDetailView');
     const boardView = document.getElementById('boardView');
 
-    // 1. 모달이 열려 있는 상태에서 뒤로가기 시 모달만 닫기
+    // 1순위: 메뉴가 열려있으면 메뉴부터 닫고 중단
+    if (menu.classList.contains('active')) {
+        menu.classList.remove('active');
+        return;
+    }
+
+    // 2순위: 모달 닫기
     if (state && state.modalOpen) {
         document.querySelectorAll('.modal').forEach(m => {
             m.style.display = 'none';
@@ -517,24 +536,22 @@ window.onpopstate = (event) => {
         return; 
     }
 
-    // 2. 게시글 상세보기 화면일 때 뒤로가기 -> 목록 화면으로 이동
+    // 3순위: 상세보기 화면에서 뒤로가기 -> 목록으로
     if (detailView.style.display === 'block') {
-        const boardName = document.getElementById('currentBoardTitle').innerText;
         detailView.style.display = 'none';
         boardView.style.display = 'block';
         window.currentViewingPostId = null;
-        renderPosts(boardName);
+        renderPosts(document.getElementById('currentBoardTitle').innerText);
         return;
     }
 
-    // 3. 게시판 목록 화면일 때 뒤로가기 -> 무조건 홈(메인)으로 이동
-    // 어떤 라운지에서 다른 라운지로 이동했어도, 뒤로가기 시에는 메인 화면으로 빠집니다.
+    // 4순위: 게시판 목록에서 뒤로가기 -> 홈으로
     if (boardView.style.display === 'block') {
         window.goHome();
         return;
     }
 
-    // 4. 기타 상황 (홈 화면 등)
+    // 기본: 홈 화면 표시
     document.getElementById('homeView').style.display = 'block';
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'none';
