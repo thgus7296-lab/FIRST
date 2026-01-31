@@ -141,8 +141,10 @@ window.loadBoard = (name) => {
     document.getElementById('profileDisplay').src = loungeSettings[name].profile;
     document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
     document.getElementById('sideMenu').classList.remove('active');
-    renderPosts(name);
-    history.pushState({ view: 'board', boardName: name }, '');
+renderPosts(name);
+    // 🔥 [버그 수정] pushState 대신 replaceState를 사용하여 히스토리가 쌓이는 것을 방지합니다.
+    // 이렇게 하면 어떤 게시판으로 이동하든, '뒤로가기' 시 바로 이전의 '홈'으로 이동하게 됩니다.
+    history.replaceState({ view: 'board', boardName: name }, '');
 };
 
 // --- 게시글 로직 (실시간 연동) ---
