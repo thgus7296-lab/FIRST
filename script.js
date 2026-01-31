@@ -148,20 +148,24 @@ window.loadBoard = (name) => {
 // --- 게시글 로직 (실시간 연동) ---
 onValue(ref(db, 'posts'), (snapshot) => {
     const data = snapshot.val();
+    // 1. 전체 게시글 데이터를 최신화하고 정렬합니다.
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-    window.allPosts.sort((a, b) => b.timestamp - a.timestamp);
-    
-    // 현재 상세페이지를 보고 있다면 상세 데이터도 즉시 갱신
+    window.allPosts.sort((a, b) => b.timestamp - a.timestamp); 
+    // 2. 현재 사용자가 게시글 상세보기를 하고 있는 경우
     if (window.currentViewingPostId) {
         const updatedPost = window.allPosts.find(p => p.id === window.currentViewingPostId);
         if (updatedPost) {
-            updateDetailStats(updatedPost);
-            renderComments(updatedPost.comments);
+            updateDetailStats(updatedPost); // 좋아요 수 등 갱신
+            renderComments(updatedPost.comments); // 댓글 목록 갱신
         }
     }
-
+    // 3. 현재 사용자가 게시판 목록을 보고 있는 경우에도 즉시 리스트를 다시 그립니다.
     const currentTitle = document.getElementById('currentBoardTitle').innerText;
-    if (document.getElementById('boardView').style.display === 'block') renderPosts(currentTitle);
+    const boardView = document.getElementById('boardView');
+        // 게시판 뷰가 열려있을 때만 렌더링하여 성능 저하를 방지합니다.
+    if (boardView && boardView.style.display !== 'none') {
+        renderPosts(currentTitle);
+    }
 });
 
 window.openPostModal = () => {
@@ -255,10 +259,13 @@ window.openPostDetail = (id) => {
 };
 
 window.closePostDetail = () => {
+    // 1. 현재 보고 있는 게시판 이름을 가져옵니다.
     const boardName = document.getElementById('currentBoardTitle').innerText;
+        // 2. 상세보기 ID 초기화
     window.currentViewingPostId = null;
-    // 🔥 상세에서 나올 때 목록 강제 재렌더
+        // 3. 목록 화면으로 전환하기 전에 리스트를 최신 데이터(window.allPosts)로 다시 그립니다.
     renderPosts(boardName);
+        // 4. 뒤로가기 실행 (화면 전환)
     history.back();
 };
 
