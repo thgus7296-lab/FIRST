@@ -518,41 +518,34 @@ const toBase64 = file => new Promise((resolve) => {
 window.onpopstate = (event) => {
     const state = event.state;
     const menu = document.getElementById('sideMenu');
-    const detailView = document.getElementById('postDetailView');
-    const boardView = document.getElementById('boardView');
 
-    // 1순위: 메뉴가 열려있으면 메뉴부터 닫고 중단
+    // 1순위: 메뉴가 열려있으면 메뉴부터 닫기
     if (menu.classList.contains('active')) {
         menu.classList.remove('active');
         return;
     }
 
-    // 2순위: 모달 닫기
-    if (state && state.modalOpen) {
+    // 2순위: 모달 상태가 없는 경우(뒤로가기로 모달을 닫는 상황) 모든 모달 강제 폐쇄
+    if (!state || !state.modalOpen) {
         document.querySelectorAll('.modal').forEach(m => {
             m.style.display = 'none';
             m.classList.remove('active');
         });
-        return; 
     }
 
-    // 3순위: 상세보기 화면에서 뒤로가기 -> 목록으로
-    if (detailView.style.display === 'block') {
-        detailView.style.display = 'none';
-        boardView.style.display = 'block';
-        window.currentViewingPostId = null;
-        renderPosts(document.getElementById('currentBoardTitle').innerText);
-        return;
+    // 3순위: state 기반 화면 전환 (이게 있어야 홈으로 안 튕깁니다)
+    if (state && state.view === 'board') {
+        document.getElementById('homeView').style.display = 'none';
+        document.getElementById('boardView').style.display = 'block';
+        document.getElementById('postDetailView').style.display = 'none';
+        renderPosts(state.boardName);
+    } else if (state && state.view === 'detail') {
+        // 상세보기가 필요할 경우의 처리 (기존 로직 유지)
+        openPostDetail(state.postId);
+    } else {
+        // 그 외엔 홈으로 이동
+        document.getElementById('homeView').style.display = 'block';
+        document.getElementById('boardView').style.display = 'none';
+        document.getElementById('postDetailView').style.display = 'none';
     }
-
-    // 4순위: 게시판 목록에서 뒤로가기 -> 홈으로
-    if (boardView.style.display === 'block') {
-        window.goHome();
-        return;
-    }
-
-    // 기본: 홈 화면 표시
-    document.getElementById('homeView').style.display = 'block';
-    document.getElementById('boardView').style.display = 'none';
-    document.getElementById('postDetailView').style.display = 'none';
 };
