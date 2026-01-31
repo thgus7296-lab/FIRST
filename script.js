@@ -29,57 +29,56 @@ let loungeSettings = {
     '대나무 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
-// --- 모달 제어 ---
+// ---------------- 모달 ----------------
 window.openModal = (id) => {
     const modal = document.getElementById(id);
     if (!modal) return;
     if (id === 'joinModal') document.getElementById('joinForm').reset();
     modal.style.display = 'block';
     setTimeout(() => modal.classList.add('active'), 10);
-    history.pushState({ modalOpen: id }, '');
 };
 
 window.closeModal = (id) => {
     const modal = document.getElementById(id);
-    if (modal && (modal.style.display === 'block' || modal.classList.contains('active'))) {
-        modal.style.display = 'none';
-        modal.classList.remove('active');
-        if (history.state && history.state.modalOpen === id) history.back();
-    }
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.style.display = 'none';
 };
 
 window.closeModalByOutside = (event, id) => {
-    if (event.target.id === id) window.closeModal(id);
+    if (event.target.id === id) closeModal(id);
 };
 
-// --- 로그인 / 회원가입 ---
+// ---------------- 로그인 ----------------
 window.handleJoin = async (e) => {
     e.preventDefault();
     const empId = document.getElementById('joinEmpId').value;
     const userData = {
         name: document.getElementById('joinName').value,
-        empId: empId,
+        empId,
         rank: document.getElementById('joinRank').value,
         pw: document.getElementById('joinPw').value,
         position: document.getElementById('joinPosition').value
     };
     await set(ref(db, 'users/' + empId), userData);
     alert("회원가입 완료!");
-    window.closeModal('joinModal');
+    closeModal('joinModal');
 };
 
 window.handleLogin = async () => {
     const empId = document.getElementById('loginEmpId').value;
     const pw = document.getElementById('loginPw').value;
+
     if (empId === "1" && pw === "1") {
         successLogin({ empId: "1", position: "관리자", name: "관리자" });
+        return;
+    }
+
+    const snapshot = await get(child(ref(db), `users/${empId}`));
+    if (snapshot.exists() && snapshot.val().pw === pw) {
+        successLogin(snapshot.val());
     } else {
-        const snapshot = await get(child(ref(db), `users/${empId}`));
-        if (snapshot.exists() && snapshot.val().pw === pw) {
-            successLogin(snapshot.val());
-        } else {
-            alert("정보를 확인해주세요");
-        }
+        alert("정보를 확인해주세요");
     }
 };
 
@@ -90,7 +89,7 @@ function successLogin(user) {
     window.isLoggedIn = true;
     document.getElementById('loginIcons').style.display = 'none';
     document.getElementById('userInfoIcon').style.display = 'flex';
-    window.closeModal('loginModal');
+    closeModal('loginModal');
 }
 
 window.handleLogout = () => {
@@ -98,13 +97,11 @@ window.handleLogout = () => {
     window.isLoggedIn = false;
     document.getElementById('loginIcons').style.display = 'inline';
     document.getElementById('userInfoIcon').style.display = 'none';
-    window.goHome();
+    goHome();
 };
 
-// --- 게시글 작성 (✅ 수정된 부분) ---
-window.savePost = async (e) => {
-    if (e) e.preventDefault();   // 🔥 핵심 수정
-
+// ---------------- 게시글 작성 ----------------
+window.savePost = async () => {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
@@ -126,10 +123,32 @@ window.savePost = async (e) => {
         comments: {}
     };
 
-    try {
-        await push(ref(db, 'posts'), postData);
-        window.closeModal('postModal');   // 이제 정상 실행됨
-    } catch (err) {
-        alert("저장에 실패했습니다: " + err.message);
-    }
+    await push(ref(db, 'posts'), postData);
+    closeModal('postModal');
+};
+
+// =================================================
+// ✅ 여기부터가 누락되어 있던 핵심 기능
+// =================================================
+
+// 사이드 메뉴 토글
+window.toggleMenu = () => {
+    document.getElementById('sideMenu').classList.toggle('active');
+};
+
+// 홈 이동
+window.goHome = () => {
+    document.getElementById('homeView').style.display = 'block';
+    document.getElementById('boardView').style.display = 'none';
+    document.getElementById('postDetailView').style.display = 'none';
+    document.getElementById('sideMenu').classList.remove('active');
+};
+
+// 게시판 진입
+window.loadBoard = (boardName) => {
+    document.getElementById('homeView').style.display = 'none';
+    document.getElementById('postDetailView').style.display = 'none';
+    document.getElementById('boardView').style.display = 'block';
+    document.getElementById('currentBoardTitle').innerText = boardName;
+    document.getElementById('sideMenu').classList.remove('active');
 };
