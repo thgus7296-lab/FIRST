@@ -13,11 +13,11 @@
         <div class="header-center" onclick="goHome()"><h1>H1 Blind</h1></div>
         <div class="header-right">
             <span id="loginIcons">
-                <i class="fas fa-user" style="margin-right:10px;" onclick="openModal('loginModal')"></i>
+                <i class="fas fa-user" style="margin-right: 10px;" onclick="openModal('loginModal')"></i>
                 <i class="fas fa-plus-circle" onclick="openModal('joinModal')"></i>
             </span>
-            <span id="userInfoIcon" style="display:none;">
-                <i class="fas fa-user" style="margin-right:12px;" onclick="showUserInfo()"></i>
+            <span id="userInfoIcon" style="display: none;">
+                <i class="fas fa-user" style="margin-right: 12px;" onclick="showUserInfo()"></i>
                 <i class="fas fa-sign-out-alt" onclick="handleLogout()"></i>
             </span>
         </div>
@@ -44,31 +44,113 @@
             <div class="image-placeholder" style="height:300px; background:#eee; display:flex; justify-content:center; align-items:center;">메인 콘텐츠 영역</div>
         </div>
 
-        <div id="boardView" style="display:none;">
+        <div id="boardView" style="display: none;">
+            <div class="board-visual-area">
+                <div class="rect-banner"><img id="bgDisplay" src="https://via.placeholder.com/800x200" alt="배경"></div>
+                <div class="circle-profile"><img id="profileDisplay" src="https://via.placeholder.com/100x100" alt="프로필"></div>
+                <button id="adminImgEditBtn" class="admin-edit-btn" onclick="openModal('imgEditModal')" style="display:none;">이미지 수정</button>
+            </div>
             <div class="board-header">
-                <h2 id="currentBoardTitle"></h2>
+                <h2 id="currentBoardTitle">게시판 이름</h2>
                 <button id="writeBtn" class="main-btn" onclick="openPostModal()">글쓰기</button>
             </div>
-            <div id="postList"></div>
+            <div id="postList" class="post-list"></div>
+        </div>
+
+        <div id="postDetailView" style="display: none;">
+            <div class="detail-top-nav">
+                <div style="display: flex; align-items: center;">
+                    <i class="fas fa-chevron-left detail-back" onclick="closePostDetail()"></i>
+                    <span class="detail-logo-text">H1 Blind</span>
+                </div>
+                <i id="deletePostBtn" class="fas fa-trash-alt" style="display:none; color:#ff4d4d; cursor:pointer;" onclick="deletePost()"></i>
+            </div>
+            <div class="detail-header-info">
+                <div class="detail-user-row">
+                    <span id="dtNickname" class="dt-nick">닉네임</span>
+                    <span id="dtTime" class="dt-time">방금 전</span>
+                </div>
+                <h2 id="dtTitle" class="dt-title">제목</h2>
+                <p id="dtContent" class="dt-content">내용</p>
+            </div>
+            <div class="detail-action-bar">
+                <div class="stat-item" onclick="handleLikeInDetail()" style="cursor:pointer;">
+                    <i id="dtLikeIcon" class="far fa-heart"></i> <small id="dtLikeCount">0</small>
+                </div>
+                <div class="stat-item">
+                    <i class="far fa-comment"></i> <small id="dtCommentCount">0</small>
+                </div>
+            </div>
+            <div class="detail-divider"></div>
+            <div id="dtCommentList" class="dt-comment-list"></div>
+            <div class="dt-input-area">
+                <input type="text" id="dtCommentInput" placeholder="댓글을 남겨주세요.">
+                <button onclick="submitComment()">등록</button>
+            </div>
         </div>
     </main>
 
-    <div id="postModal" class="modal" onclick="closeModalByOutside(event, 'postModal')">
+    <div id="imgEditModal" class="modal" onclick="closeModalByOutside(event, 'imgEditModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close" onclick="closeModal('postModal')">&times;</span>
-            <h2>새 글 작성</h2>
-            <input type="text" id="postTitle" placeholder="제목을 입력하세요">
-            <textarea id="postContent" rows="8" placeholder="내용을 입력하세요"></textarea>
-            <button class="main-btn" style="width:100%;" onclick="savePost()">등록하기</button>
+            <span class="close" onclick="closeModal('imgEditModal')">&times;</span>
+            <h2>라운지 이미지 변경</h2>
+            <div class="upload-group">
+                <label>배경 이미지</label>
+                <input type="file" id="bgInput" accept="image/*">
+            </div>
+            <div class="upload-group">
+                <label>프로필 이미지</label>
+                <input type="file" id="profileInput" accept="image/*">
+            </div>
+            <button class="main-btn" style="width:100%; margin-top:10px;" onclick="saveLoungeImages()">변경 내용 저장</button>
+        </div>
+    </div>
+
+    <div id="joinModal" class="modal" onclick="closeModalByOutside(event, 'joinModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close" onclick="closeModal('joinModal')">&times;</span>
+            <h2>회원가입</h2>
+            <p class="join-warning">※ 사번은 ID로 사용됩니다.</p>
+            <form id="joinForm" onsubmit="handleJoin(event)">
+                <input type="text" id="joinEmpId" placeholder="사번" required inputmode="numeric">
+                <input type="password" id="joinPw" placeholder="비밀번호" required>
+                <input type="text" id="joinName" placeholder="이름" required>
+                <select id="joinPosition" required>
+                    <option value="" disabled selected>구분 선택</option>
+                    <option value="매니저">매니저</option>
+                    <option value="책임 매니저">책임 매니저</option>
+                </select>
+                <select id="joinRank" required>
+                    <option value="" disabled selected>직책 선택</option>
+                    <option value="공장장">공장장</option>
+                    <option value="부서장">부서장</option>
+                    <option value="팀장">팀장</option>
+                    <option value="해당없음">해당없음</option>
+                </select>
+                <button type="submit" class="main-btn" style="width:100%; margin-top:10px;">가입하기</button>
+            </form>
         </div>
     </div>
 
     <div id="loginModal" class="modal" onclick="closeModalByOutside(event, 'loginModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h2>로그인</h2>
-            <input type="text" id="loginEmpId" placeholder="사번">
+            <input type="text" id="loginEmpId" placeholder="사번" inputmode="numeric">
             <input type="password" id="loginPw" placeholder="비밀번호">
-            <button class="main-btn" onclick="handleLogin()">로그인</button>
+            <div style="display:flex; justify-content:space-between; margin-top:15px;">
+                <button class="main-btn" style="background:#888;" onclick="closeModal('loginModal')">취소</button>
+                <button class="main-btn" onclick="handleLogin()">로그인</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="postModal" class="modal" onclick="closeModalByOutside(event, 'postModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close" onclick="closeModal('postModal')">&times;</span>
+            <h2>새 글 작성</h2>
+            <input type="text" id="postTitle" placeholder="제목을 입력하세요">
+            <textarea id="postContent" placeholder="내용을 입력하세요" rows="8"></textarea>
+            <button class="main-btn" style="width:100%;" onclick="savePost()">등록하기</button>
         </div>
     </div>
 
