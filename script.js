@@ -45,7 +45,10 @@ window.closeModal = (id) => {
     if (modal && (modal.style.display === 'block' || modal.classList.contains('active'))) {
         modal.style.display = 'none';
         modal.classList.remove('active');
-        if (history.state && history.state.modalOpen === id) history.back();
+        // 모달 전용 히스토리가 쌓여있을 때만 back()을 실행하여 onpopstate의 홈 이동을 방지합니다.
+        if (history.state && history.state.modalOpen === id) {
+            history.back();
+        }
     }
 };
 
