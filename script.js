@@ -371,27 +371,28 @@ function timeSince(date) {
 
 // --- 브라우저 뒤로가기 통합 관리 ---
 window.onpopstate = (event) => {
-    // 1. 뒤로가기 시 열려있는 모든 모달(글쓰기, 이미지수정 등)을 강제로 닫습니다.
-    document.querySelectorAll('.modal').forEach(m => {
-        m.style.display = 'none';
-        m.classList.remove('active');
-    });
-
     const state = event.state;
-    
-    // 2. 상태가 없거나, '홈' 상태이거나, '게시판 목록' 상태에서 뒤로가기를 누른 경우
-    // 사장님 지시사항: 게시판 목록에서 뒤로가기 시 무조건 홈으로 이동.
+
+    // 1. 모달이 열려있는 상태에서 뒤로가기가 발생한 경우 (예: 글쓰기 창 닫기)
+    // 이 경우에는 화면 전환(goHome)을 하지 않고 모달만 닫고 종료합니다.
+    if (state && state.modalOpen) {
+        document.querySelectorAll('.modal').forEach(m => {
+            m.style.display = 'none';
+            m.classList.remove('active');
+        });
+        return; // 여기서 로직 종료 (홈으로 튕기지 않음)
+    }
+
+    // 2. 일반적인 화면 전환 뒤로가기 처리
     if (!state || state.view === 'home' || state.view === 'board') {
+        // 게시판 목록에서 뒤로가기 시 홈으로 이동
         window.goHome(); 
-    } 
-    // 3. '게시글 상세'를 보다가 뒤로가기를 누른 경우
-    else if (state.view === 'detail') {
-        // 상세 뷰를 숨기고 목록 뷰를 보여줍니다.
+    } else if (state.view === 'detail') {
+        // 상세에서 뒤로가기 시 목록으로 이동
         document.getElementById('homeView').style.display = 'none';
         document.getElementById('boardView').style.display = 'block';
         document.getElementById('postDetailView').style.display = 'none';
         
-        // 목록으로 돌아왔으므로, 최신 데이터로 리스트를 다시 그려줍니다.
         const boardName = document.getElementById('currentBoardTitle').innerText;
         if (typeof renderPosts === 'function') {
             renderPosts(boardName);
