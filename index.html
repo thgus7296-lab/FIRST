@@ -95,11 +95,11 @@
             <span class="close" onclick="closeModal('imgEditModal')">&times;</span>
             <h2>라운지 이미지 변경</h2>
             <div class="upload-group">
-                <label>배경 이미지 (800x200 권장)</label>
+                <label>배경 이미지</label>
                 <input type="file" id="bgInput" accept="image/*">
             </div>
             <div class="upload-group">
-                <label>프로필 이미지 (100x100 권장)</label>
+                <label>프로필 이미지</label>
                 <input type="file" id="profileInput" accept="image/*">
             </div>
             <button class="main-btn" style="width:100%; margin-top:10px;" onclick="saveLoungeImages()">변경 내용 저장</button>
@@ -110,13 +110,13 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal('joinModal')">&times;</span>
             <h2>회원가입</h2>
-            <p class="join-warning">※ 사번은 ID로 사용됩니다. 정확한 사번을 기입해주세요.</p>
+            <p class="join-warning">※ 사번은 ID로 사용됩니다.</p>
             <form id="joinForm" onsubmit="handleJoin(event)">
                 <input type="text" id="joinEmpId" placeholder="사번" required inputmode="numeric">
                 <input type="password" id="joinPw" placeholder="비밀번호" required>
-                <input type="text" id="joinName" placeholder="이름" required inputmode="text">
+                <input type="text" id="joinName" placeholder="이름" required>
                 <select id="joinPosition" required>
-                    <option value="" disabled selected>구분(매니저/책임) 선택</option>
+                    <option value="" disabled selected>구분 선택</option>
                     <option value="매니저">매니저</option>
                     <option value="책임 매니저">책임 매니저</option>
                 </select>
@@ -125,7 +125,6 @@
                     <option value="공장장">공장장</option>
                     <option value="부서장">부서장</option>
                     <option value="팀장">팀장</option>
-                    <option value="보직과장">보직과장</option>
                     <option value="해당없음">해당없음</option>
                 </select>
                 <button type="submit" class="main-btn" style="width:100%; margin-top:10px;">가입하기</button>
