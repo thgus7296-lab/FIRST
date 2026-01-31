@@ -389,33 +389,45 @@ function timeSince(date) {
 }
 
 // --- 브라우저 뒤로가기 통합 관리 ---
-window.onpopstate = (event) => {
-    const state = event.state;
-    const detailView = document.getElementById('postDetailView');
+window.savePost = async () => {
+    if (!window.isLoggedIn || !window.currentUser) {
+        alert("로그인 후 작성 가능합니다");
+        return;
+    }
+    
+    const title = document.getElementById('postTitle').value.trim();
+    const content = document.getElementById('postContent').value.trim();
+    const board = document.getElementById('currentBoardTitle').innerText;
 
-    // 1. 모달 닫기 처리
-    if (state && state.modalOpen) {
-        document.querySelectorAll('.modal').forEach(m => {
-            m.style.display = 'none';
-            m.classList.remove('active');
-        });
+    if (!title || !content) {
+        alert("제목 혹은 글을 입력해주세요");
         return;
     }
 
-    // 2. 상세페이지에서 목록으로 나가는 경우 (물리 버튼 포함)
-    // 현재 상세페이지가 켜져 있다면 목록으로 보냅니다.
-    if (detailView.style.display === 'block') {
-        const boardName = document.getElementById('currentBoardTitle').innerText;
-        document.getElementById('homeView').style.display = 'none';
-        document.getElementById('boardView').style.display = 'block';
-        detailView.style.display = 'none';
-        window.currentViewingPostId = null;
-        renderPosts(boardName);
-        return;
-    }
+    const postData = {
+        board, title, content,
+        author: window.currentUser.nickname,
+        authorId: window.currentUser.empId,
+        timestamp: Date.now(),
+        views: 0,
+        likedBy: {},
+        comments: {}
+    };
 
-    // 3. 그 외 (목록에서 뒤로가기 등)는 무조건 홈으로
-    window.goHome();
+    try {
+        await push(ref(db, 'posts'), postData);
+        
+        // 🔥 [수정] 모달을 닫기 전에 목록을 먼저 확실히 갱신
+        renderPosts(board); 
+        
+        // closeModal 내부의 history.back()이 onpopstate를 트리거해도 
+        // 1번 로직에서 'modalOpen' 상태를 체크하므로 홈으로 튕기지 않습니다.
+        window.closeModal('postModal');
+        
+        alert("등록되었습니다.");
+    } catch (err) {
+        alert("저장에 실패했습니다: " + err.message);
+    }
 };
 
 window.saveLoungeImages = async () => {
