@@ -255,15 +255,24 @@ window.openPostDetail = (id) => {
 };
 
 window.closePostDetail = () => {
+    const boardName = document.getElementById('currentBoardTitle').innerText;
     window.currentViewingPostId = null;
+    // 🔥 상세에서 나올 때 목록 강제 재렌더
+    renderPosts(boardName);
     history.back();
 };
 
+
 window.deletePost = async () => {
     if (!confirm("삭제하시겠습니까?")) return;
+    const boardName = document.getElementById('currentBoardTitle').innerText;
     await remove(ref(db, `posts/${window.currentViewingPostId}`));
-    window.closePostDetail();
+    // 🔥 즉시 목록 갱신
+    window.currentViewingPostId = null;
+    renderPosts(boardName);
+    history.back();
 };
+
 
 function renderComments(commentsObj) {
     const list = document.getElementById('dtCommentList');
