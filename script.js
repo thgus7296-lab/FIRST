@@ -22,12 +22,14 @@ window.allPosts = [];
 window.currentViewingPostId = null;
 
 let loungeSettings = {
+    '칭찬 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
     '1공장 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '경제 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
+    '리더 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
     '책임 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
     '매니저 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
+    '경제 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
     '취미 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '대나무 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
+    '신문고': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
 // --- 모달 제어 및 외부 클릭 닫기 ---
@@ -137,20 +139,48 @@ window.goHome = () => {
 
 window.loadBoard = (name) => {
     if (!window.isLoggedIn) { alert("로그인을 해주세요"); return; }
-    if (window.currentUser.position !== "관리자") {
-        if (name === "매니저 라운지" && window.currentUser.position !== "매니저") { alert("매니저 전용"); return; }
-        if (name === "책임 라운지" && window.currentUser.position !== "책임 매니저") { alert("책임 전용"); return; }
+    
+    const user = window.currentUser;
+    // 관리자는 무조건 프리패스
+    if (user.position !== "관리자") {
+        // 리더 라운지: 직위가 '보직과장', '부서장', '팀장'인 계정만
+        if (name === "리더 라운지") {
+            const leaderRoles = ["보직과장", "부서장", "팀장"];
+            if (!leaderRoles.includes(user.duty)) { 
+                alert("리더 라운지는 보직과장, 부서장, 팀장만 입장 가능합니다.");
+                return;
+            }
+        }
+        // 책임 라운지: 직급이 '책임 매니저'이면서 직위가 '해당 없음'인 계정만
+        else if (name === "책임 라운지") {
+            if (!(user.position === "책임 매니저" && user.duty === "해당 없음")) {
+                alert("책임 라운지는 직위가 없는 책임 매니저만 입장 가능합니다.");
+                return;
+            }
+        }
+        // 매니저 라운지: 직급이 '매니저'인 계정만
+        else if (name === "매니저 라운지") {
+            if (user.position !== "매니저") {
+                alert("매니저 라운지는 매니저 직급만 입장 가능합니다.");
+                return;
+            }
+        }
     }
+
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('postDetailView').style.display = 'none';
     document.getElementById('currentBoardTitle').innerText = name;
-    document.getElementById('bgDisplay').src = loungeSettings[name].bg;
-    document.getElementById('profileDisplay').src = loungeSettings[name].profile;
+    
+    // 설정값 적용 (신규 게시판 대응)
+    const setting = loungeSettings[name] || { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' };
+    document.getElementById('bgDisplay').src = setting.bg;
+    document.getElementById('profileDisplay').src = setting.profile;
+    
     document.getElementById('writeBtn').style.display = (name === '대나무 라운지') ? 'none' : 'block';
     document.getElementById('sideMenu').classList.remove('active');
-renderPosts(name);
-    // 히스토리를 쌓아주어야 뒤로가기 버튼을 눌렀을 때 웹이 종료되지 않고 onpopstate가 작동합니다.
+    renderPosts(name);
+    
     history.pushState({ view: 'board', boardName: name }, '');
 };
 
@@ -266,6 +296,15 @@ function renderPosts(boardName) {
 window.openPostDetail = (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if(!post) return;
+
+    // 🔥 [신문고] 열람 권한 체크: 공장장 및 관리자만 가능
+    if (post.board === "신문고" && window.currentUser.position !== "관리자") {
+        if (window.currentUser.duty !== "공장장") {
+            alert("신문고 게시글은 공장장님만 열람할 수 있습니다.");
+            return;
+        }
+    }
+
     window.currentViewingPostId = id;
     
     // 조회수 증가
@@ -283,7 +322,6 @@ window.openPostDetail = (id) => {
     
     updateDetailStats(post);
     renderComments(post.comments);
-    // 현재 상태가 '상세보기'임을 브라우저에 기록
     history.pushState({ view: 'detail', postId: id }, '');
 };
 
