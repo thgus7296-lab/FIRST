@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>H1 Blind</title>
+    <title>H1 VOICE</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -13,8 +13,7 @@
         <div class="header-center" onclick="goHome()"><h1>H1 VOICE</h1></div>
         <div class="header-right">
             <span id="loginIcons">
-                <i class="fas fa-user" style="margin-right: 10px;" onclick="openModal('loginModal')"></i>
-                <i class="fas fa-plus-circle" onclick="openModal('joinModal')"></i>
+                <i class="fas fa-user" onclick="openModal('loginModal')"></i>
             </span>
             <span id="userInfoIcon" style="display: none;">
                 <i class="fas fa-user" style="margin-right: 12px;" onclick="showUserInfo()"></i>
@@ -27,15 +26,10 @@
         <div class="menu-content">
             <h3>게시판 목록</h3>
             <ul>
-    <li class="menu-item" onclick="loadBoard('칭찬 라운지')">칭찬 라운지 🎖️</li>
-    <li class="menu-item" onclick="loadBoard('1공장 라운지')">1공장 라운지</li>
-    <li class="menu-item" onclick="loadBoard('리더 라운지')">리더 라운지</li>
-    <li class="menu-item" onclick="loadBoard('책임 라운지')">책임 라운지</li>
-    <li class="menu-item" onclick="loadBoard('매니저 라운지')">매니저 라운지</li>
-    <li class="menu-item" onclick="loadBoard('경제 라운지')">경제 라운지</li>
-    <li class="menu-item" onclick="loadBoard('취미 라운지')">취미 라운지</li>
-    <li class="menu-item" onclick="loadBoard('신문고')">신문고</li>
-</ul>
+                <li class="menu-item" onclick="loadBoard('칭찬 라운지')">칭찬 라운지 🎖️</li>
+                <li class="menu-item" onclick="loadBoard('1공장 라운지')">1공장 라운지</li>
+                <li class="menu-item" onclick="loadBoard('신문고')">신문고</li>
+            </ul>
         </div>
     </nav>
 
@@ -63,7 +57,7 @@
             <div class="detail-top-nav">
                 <div style="display: flex; align-items: center;">
                     <i class="fas fa-chevron-left detail-back" onclick="closePostDetail()"></i>
-                    <span class="detail-logo-text">H1 Blind</span>
+                    <span class="detail-logo-text">H1 VOICE</span>
                 </div>
                 <i id="deletePostBtn" class="fas fa-trash-alt" style="display:none; color:#ff4d4d; cursor:pointer;" onclick="deletePost()"></i>
             </div>
@@ -92,6 +86,18 @@
         </div>
     </main>
 
+    <div id="loginModal" class="modal" onclick="closeModalByOutside(event, 'loginModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2>로그인</h2>
+            <input type="text" id="loginEmpId" placeholder="사번" inputmode="numeric">
+            <input type="password" id="loginPw" placeholder="비밀번호">
+            <div style="display:flex; justify-content:space-between; margin-top:15px;">
+                <button class="main-btn" style="background:#888;" onclick="closeModal('loginModal')">취소</button>
+                <button class="main-btn" onclick="handleLogin()">로그인</button>
+            </div>
+        </div>
+    </div>
+
     <div id="imgEditModal" class="modal" onclick="closeModalByOutside(event, 'imgEditModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <span class="close" onclick="closeModal('imgEditModal')">&times;</span>
@@ -105,44 +111,6 @@
                 <input type="file" id="profileInput" accept="image/*">
             </div>
             <button class="main-btn" style="width:100%; margin-top:10px;" onclick="saveLoungeImages()">변경 내용 저장</button>
-        </div>
-    </div>
-
-    <div id="joinModal" class="modal" onclick="closeModalByOutside(event, 'joinModal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close" onclick="closeModal('joinModal')">&times;</span>
-            <h2>회원가입</h2>
-            <p class="join-warning">※ 사번은 ID로 사용됩니다.</p>
-            <form id="joinForm" onsubmit="handleJoin(event)">
-                <input type="text" id="joinEmpId" placeholder="사번" required inputmode="numeric">
-                <input type="password" id="joinPw" placeholder="비밀번호" required>
-                <input type="text" id="joinName" placeholder="이름" required>
-                <select id="joinPosition" required>
-                    <option value="" disabled selected>구분 선택</option>
-                    <option value="매니저">매니저</option>
-                    <option value="책임 매니저">책임 매니저</option>
-                </select>
-                <select id="joinRank" required>
-                    <option value="" disabled selected>직책 선택</option>
-                    <option value="공장장">공장장</option>
-                    <option value="부서장">부서장</option>
-                    <option value="팀장">팀장</option>
-                    <option value="해당없음">해당없음</option>
-                </select>
-                <button type="submit" class="main-btn" style="width:100%; margin-top:10px;">가입하기</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="loginModal" class="modal" onclick="closeModalByOutside(event, 'loginModal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h2>로그인</h2>
-            <input type="text" id="loginEmpId" placeholder="사번" inputmode="numeric">
-            <input type="password" id="loginPw" placeholder="비밀번호">
-            <div style="display:flex; justify-content:space-between; margin-top:15px;">
-                <button class="main-btn" style="background:#888;" onclick="closeModal('loginModal')">취소</button>
-                <button class="main-btn" onclick="handleLogin()">로그인</button>
-            </div>
         </div>
     </div>
 
