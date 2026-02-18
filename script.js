@@ -151,17 +151,23 @@ onValue(ref(db, 'posts'), (snapshot) => {
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
         if (post) { 
+            // 통계값(좋아요/조회수 수치)만 업데이트하고 목록은 다시 그리지 않음
             updateDetailStats(post); 
             
-            // 입력창(dtCommentInput)에 포커스가 없을 때만 댓글 목록을 갱신하여 자판 입력 끊김 방지
+            // 사용자가 입력 중이 아닐 때만 렌더링하도록 더 엄격하게 제어
             const commentInput = document.getElementById('dtCommentInput');
-            if (document.activeElement !== commentInput) {
+            if (commentInput !== document.activeElement && commentInput.value.length === 0) {
                 renderComments(post.comments); 
             }
         }
     }
-    const currentTitle = document.getElementById('currentBoardTitle').innerText;
-    if (document.getElementById('boardView').style.display !== 'none') renderPosts(currentTitle);
+    
+    // 메인 목록 업데이트 시에도 입력창 상태를 확인하여 간섭 최소화
+    const postModal = document.getElementById('postModal');
+    if (postModal.style.display !== 'block') {
+        const currentTitle = document.getElementById('currentBoardTitle').innerText;
+        if (document.getElementById('boardView').style.display !== 'none') renderPosts(currentTitle);
+    }
 });
 
 window.openPostModal = () => {
@@ -301,9 +307,14 @@ window.toggleLike = async (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
 
-    // 로그인 정보가 없으면 'anon_user'라는 공통 키를 사용하거나 기기 식별용 로컬스토리지를 사용
-    // 여기서는 간단하게 로그인 시엔 사번을, 비로그인 시엔 'anon_user'를 키로 사용합니다.
-    const userKey = window.isLoggedIn ? window.currentUser.empId : 'anon_user';
+    // 비로그인 사용자는 로컬 스토리지를 활용해 기기별 고유 ID를 생성하여 하트 색상을 유지함
+    let deviceId = localStorage.getItem('h1_device_id');
+    if (!deviceId) {
+        deviceId = 'anon_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('h1_device_id', deviceId);
+    }
+
+    const userKey = window.isLoggedIn ? window.currentUser.empId : deviceId;
     
     const likedBy = post.likedBy || {};
     if (likedBy[userKey]) {
