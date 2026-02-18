@@ -120,21 +120,24 @@ window.goHome = () => {
 };
 
 window.loadBoard = (name) => {
-    // 로그인을 하지 않아도 접근 가능하도록 수정
+    // 1. 모든 뷰 숨기고 게시판 뷰 활성화
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('postDetailView').style.display = 'none';
-    document.getElementById('currentBoardTitle').innerText = name;
     
+    // 2. 게시판 제목 및 이미지 업데이트
+    document.getElementById('currentBoardTitle').innerText = name;
     const setting = loungeSettings[name] || { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' };
     document.getElementById('bgDisplay').src = setting.bg;
     document.getElementById('profileDisplay').src = setting.profile;
     
-    if (document.getElementById('sideMenu').classList.contains('active')) {
-        document.getElementById('sideMenu').classList.remove('active');
-        history.back();
+    // 3. 사이드 메뉴가 열려있다면 클래스만 제거하여 닫음 (히스토리 간섭 제거)
+    const menu = document.getElementById('sideMenu');
+    if (menu.classList.contains('active')) {
+        menu.classList.remove('active');
     }
     
+    // 4. 게시글 목록 불러오기 및 히스토리 기록
     renderPosts(name);
     history.pushState({ view: 'board', boardName: name }, '');
 };
@@ -318,13 +321,13 @@ window.onpopstate = (event) => {
     const state = event.state;
     const menu = document.getElementById('sideMenu');
 
-    // 1. 메뉴 닫기
+    // 1. 메뉴가 열려있을 때 뒤로가기 하면 메뉴만 닫고 종료
     if (menu.classList.contains('active')) {
         menu.classList.remove('active');
         return;
     }
 
-    // 2. 모달 닫기
+    // 2. 모달 처리 (열린 모달이 없어야 할 상태면 모두 닫음)
     if (!state || !state.modalOpen) {
         document.querySelectorAll('.modal').forEach(m => {
             m.style.display = 'none';
@@ -332,20 +335,30 @@ window.onpopstate = (event) => {
         });
     }
 
-    // 3. 화면 상태 전환
+    // 3. 히스토리 상태에 따른 화면 전환
     if (state && state.view === 'board') {
+        // 게시판 뷰로 복구
         document.getElementById('homeView').style.display = 'none';
         document.getElementById('boardView').style.display = 'block';
         document.getElementById('postDetailView').style.display = 'none';
         renderPosts(state.boardName);
     } else if (state && state.view === 'detail') {
-        // 상세보기가 이미 열려있지 않은 경우에만 호출 (루프 방지)
-        if (window.currentViewingPostId !== state.postId) {
-            openPostDetail(state.postId);
+        // 게시글 상세 뷰로 복구
+        const post = window.allPosts.find(p => p.id === state.postId);
+        if (post) {
+            document.getElementById('boardView').style.display = 'none';
+            document.getElementById('postDetailView').style.display = 'block';
+            document.getElementById('dtNickname').innerText = post.author;
+            document.getElementById('dtTitle').innerText = post.title;
+            document.getElementById('dtContent').innerText = post.content;
+            renderComments(post.comments);
         }
     } else {
-        // 기본적으로 메인 화면으로 이동 (뒤로가기 시 앱 종료 방지)
-        goHome();
+        // 상태가 없거나 home인 경우 무조건 홈 화면 표시
+        document.getElementById('homeView').style.display = 'block';
+        document.getElementById('boardView').style.display = 'none';
+        document.getElementById('postDetailView').style.display = 'none';
+        window.currentViewingPostId = null;
     }
 };
 
