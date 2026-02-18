@@ -21,23 +21,19 @@ header { display: flex; justify-content: space-between; align-items: center; pad
     left: 0;
 }
 
-/* 게시판 목록 아이템 (li) - 사장님 원본 스타일 기반 복구 */
+/* 게시판 목록 아이템 (li) */
 .side-menu li { 
-    padding: 12px 20px; /* 상하를 12px로 줄여 더 촘촘하게, 좌우 20px로 정렬 */
+    padding: 12px 20px; 
     border-bottom: 1px solid #eee; 
     cursor: pointer; 
     list-style: none;
-    font-size: 14px; /* 글자 크기를 1px 더 줄여 원래 느낌 복구 */
+    font-size: 14px; 
     color: #333;
     font-weight: normal;
 }
 
-/* 클릭 시 시각적 피드백 */
-.side-menu li:active {
-    background: #f5f5f5;
-}
+.side-menu li:active { background: #f5f5f5; }
 
-/* 메뉴 상단 제목 (필요 시 추가) */
 .side-menu h3 {
     padding: 20px;
     font-size: 18px;
@@ -50,7 +46,6 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .modal-content { background: white; margin: 15vh auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; position: relative; z-index: 1001; }
 .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
 .close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #888; }
-.join-warning { color: #ff0000; font-weight: bold; font-size: 13px; margin-bottom: 15px; }
 .upload-group { margin-bottom: 15px; }
 .upload-group label { font-size: 13px; color: #666; display: block; margin-bottom: 5px; }
 .post-item { padding: 15px; border-bottom: 1px solid #f0f0f0; background: #fff; cursor: pointer; }
