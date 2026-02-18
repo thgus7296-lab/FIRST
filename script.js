@@ -150,7 +150,15 @@ onValue(ref(db, 'posts'), (snapshot) => {
 
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
-        if (post) { updateDetailStats(post); renderComments(post.comments); }
+        if (post) { 
+            updateDetailStats(post); 
+            
+            // 입력창(dtCommentInput)에 포커스가 없을 때만 댓글 목록을 갱신하여 자판 입력 끊김 방지
+            const commentInput = document.getElementById('dtCommentInput');
+            if (document.activeElement !== commentInput) {
+                renderComments(post.comments); 
+            }
+        }
     }
     const currentTitle = document.getElementById('currentBoardTitle').innerText;
     if (document.getElementById('boardView').style.display !== 'none') renderPosts(currentTitle);
@@ -290,12 +298,20 @@ window.submitComment = async () => {
 };
 
 window.toggleLike = async (id) => {
-    if (!window.isLoggedIn) { alert("좋아요는 로그인이 필요합니다."); return; }
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
+
+    // 로그인 정보가 없으면 'anon_user'라는 공통 키를 사용하거나 기기 식별용 로컬스토리지를 사용
+    // 여기서는 간단하게 로그인 시엔 사번을, 비로그인 시엔 'anon_user'를 키로 사용합니다.
+    const userKey = window.isLoggedIn ? window.currentUser.empId : 'anon_user';
+    
     const likedBy = post.likedBy || {};
-    if (likedBy[window.currentUser.empId]) delete likedBy[window.currentUser.empId];
-    else likedBy[window.currentUser.empId] = true;
+    if (likedBy[userKey]) {
+        delete likedBy[userKey];
+    } else {
+        likedBy[userKey] = true;
+    }
+    
     await set(ref(db, `posts/${id}/likedBy`), likedBy);
 };
 
