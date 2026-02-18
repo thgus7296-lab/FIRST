@@ -145,36 +145,35 @@ window.loadBoard = (name) => {
 // --- 게시글 로직 ---
 onValue(ref(db, 'posts'), (snapshot) => {
     const data = snapshot.val();
+    // 1. 데이터 업데이트 (메모리상에서만 수행)
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp); 
 
-    // 현재 사용자가 글을 상세하게 보고 있을 때
+    const commentInput = document.getElementById('dtCommentInput');
+    const isTyping = document.activeElement === commentInput;
+
+    // 2. 현재 게시글 상세 보기 중인 경우
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
-        if (post) { 
-            // 1. 숫자 통계(좋아요 수 등)만 글자만 바꿔서 업데이트 (화면 전체 다시 그리기 방지)
+        if (post && !isTyping) { // 입력 중이 아닐 때만 렌더링 수행
+            // 통계 수치만 업데이트 (innerText만 변경하여 DOM 간섭 최소화)
             const likeCountEl = document.getElementById('dtLikeCount');
             const commentCountEl = document.getElementById('dtCommentCount');
             if(likeCountEl) likeCountEl.innerText = post.likedBy ? Object.keys(post.likedBy).length : 0;
             if(commentCountEl) commentCountEl.innerText = post.comments ? Object.keys(post.comments).length : 0;
-
-            // 2. 입력창에 포커스가 없을 때만 댓글 목록을 갱신 (입력 끊김 방지)
-            const commentInput = document.getElementById('dtCommentInput');
-            if (document.activeElement !== commentInput) {
-                renderComments(post.comments); 
-            }
+            
+            // 댓글 목록 갱신
+            renderComments(post.comments); 
         }
     } else {
-        // 메인 목록에 있을 때만 목록 렌더링 (상세보기 중에는 메인 목록을 그리지 않음)
+        // 3. 메인 게시판 목록에 있을 때만 렌더링 수행
         const boardView = document.getElementById('boardView');
         if (boardView && boardView.style.display === 'block') {
             const currentTitle = document.getElementById('currentBoardTitle').innerText;
             renderPosts(currentTitle);
         }
     }
-}, (error) => {
-    console.error("Data Load Error:", error);
-});
+}, (error) => { console.error(error); });
 window.openPostModal = () => {
     document.getElementById('postTitle').value = "";
     document.getElementById('postContent').value = "";
@@ -322,20 +321,19 @@ window.toggleLike = async (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
 
-    // 비로그인 사용자는 로컬 스토리지를 활용해 기기별 고유 ID를 생성하여 하트 색상을 유지함
+    // 로컬 스토리지를 이용한 기기 식별자 고정
     let deviceId = localStorage.getItem('h1_device_id');
     if (!deviceId) {
-        deviceId = 'anon_' + Math.random().toString(36).substr(2, 9);
+        deviceId = 'anon_' + Math.floor(Math.random() * 1000000);
         localStorage.setItem('h1_device_id', deviceId);
     }
-
-    const userKey = window.isLoggedIn ? window.currentUser.empId : deviceId;
+    const myId = window.isLoggedIn ? window.currentUser.empId : deviceId;
     
     const likedBy = post.likedBy || {};
-    if (likedBy[userKey]) {
-        delete likedBy[userKey];
+    if (likedBy[myId]) {
+        delete likedBy[myId];
     } else {
-        likedBy[userKey] = true;
+        likedBy[myId] = true;
     }
     
     await set(ref(db, `posts/${id}/likedBy`), likedBy);
@@ -345,9 +343,20 @@ window.handleLikeInDetail = () => window.toggleLike(window.currentViewingPostId)
 
 function updateDetailStats(post) {
     const likedBy = post.likedBy || {};
-    document.getElementById('dtLikeIcon').className = (window.isLoggedIn && likedBy[window.currentUser.empId]) ? 'fas fa-heart liked' : 'far fa-heart';
-    document.getElementById('dtLikeCount').innerText = Object.keys(likedBy).length;
-    document.getElementById('dtCommentCount').innerText = post.comments ? Object.keys(post.comments).length : 0;
+    const deviceId = localStorage.getItem('h1_device_id');
+    const myId = window.isLoggedIn ? window.currentUser.empId : deviceId;
+
+    const isLiked = likedBy[myId] ? true : false;
+    const likeIcon = document.getElementById('dtLikeIcon');
+    
+    if (likeIcon) {
+        likeIcon.className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
+    }
+    
+    const likeCountEl = document.getElementById('dtLikeCount');
+    if (likeCountEl) {
+        likeCountEl.innerText = Object.keys(likedBy).length;
+    }
 }
 
 function timeSince(date) {
