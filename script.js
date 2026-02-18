@@ -145,35 +145,39 @@ window.loadBoard = (name) => {
 // --- 게시글 로직 ---
 onValue(ref(db, 'posts'), (snapshot) => {
     const data = snapshot.val();
-    // 1. 데이터 업데이트 (메모리상에서만 수행)
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp); 
 
     const commentInput = document.getElementById('dtCommentInput');
-    const isTyping = document.activeElement === commentInput;
+    // 현재 입력창에 포커스가 있거나, 입력된 글자가 있는 경우 '입력 중'으로 간주
+    const isTyping = (document.activeElement === commentInput) || (commentInput && commentInput.value.length > 0);
 
-    // 2. 현재 게시글 상세 보기 중인 경우
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
-        if (post && !isTyping) { // 입력 중이 아닐 때만 렌더링 수행
-            // 통계 수치만 업데이트 (innerText만 변경하여 DOM 간섭 최소화)
+        if (post) { 
+            // 1. 숫자 수치만 업데이트 (화면 전체를 다시 그리지 않음)
             const likeCountEl = document.getElementById('dtLikeCount');
             const commentCountEl = document.getElementById('dtCommentCount');
             if(likeCountEl) likeCountEl.innerText = post.likedBy ? Object.keys(post.likedBy).length : 0;
             if(commentCountEl) commentCountEl.innerText = post.comments ? Object.keys(post.comments).length : 0;
             
-            // 댓글 목록 갱신
-            renderComments(post.comments); 
+            // 2. 입력 중이 절대 아닐 때만 댓글 목록을 다시 그림
+            if (!isTyping) {
+                renderComments(post.comments); 
+            }
         }
     } else {
-        // 3. 메인 게시판 목록에 있을 때만 렌더링 수행
         const boardView = document.getElementById('boardView');
-        if (boardView && boardView.style.display === 'block') {
+        // 게시판 목록 화면이고, 글쓰기/로그인 등의 모달이 하나도 안 열려있을 때만 목록 갱신
+        const isModalOpen = document.querySelector('.modal.active');
+        if (boardView && boardView.style.display === 'block' && !isModalOpen) {
             const currentTitle = document.getElementById('currentBoardTitle').innerText;
             renderPosts(currentTitle);
         }
     }
 }, (error) => { console.error(error); });
+
+
 window.openPostModal = () => {
     document.getElementById('postTitle').value = "";
     document.getElementById('postContent').value = "";
@@ -321,10 +325,10 @@ window.toggleLike = async (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
 
-    // 로컬 스토리지를 이용한 기기 식별자 고정
+    // 기기 고유 ID 생성 및 유지
     let deviceId = localStorage.getItem('h1_device_id');
     if (!deviceId) {
-        deviceId = 'anon_' + Math.floor(Math.random() * 1000000);
+        deviceId = 'anon_' + Math.random().toString(36).substring(2, 11);
         localStorage.setItem('h1_device_id', deviceId);
     }
     const myId = window.isLoggedIn ? window.currentUser.empId : deviceId;
@@ -337,6 +341,10 @@ window.toggleLike = async (id) => {
     }
     
     await set(ref(db, `posts/${id}/likedBy`), likedBy);
+    
+    // 즉시 로컬 데이터 반영 (화면 깜빡임 방지)
+    post.likedBy = likedBy;
+    if (window.currentViewingPostId === id) updateDetailStats(post);
 };
 
 window.handleLikeInDetail = () => window.toggleLike(window.currentViewingPostId);
@@ -346,16 +354,22 @@ function updateDetailStats(post) {
     const deviceId = localStorage.getItem('h1_device_id');
     const myId = window.isLoggedIn ? window.currentUser.empId : deviceId;
 
-    const isLiked = likedBy[myId] ? true : false;
+    const isLiked = likedBy && likedBy[myId];
     const likeIcon = document.getElementById('dtLikeIcon');
     
     if (likeIcon) {
-        likeIcon.className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
+        // 기존 클래스 제거 후 상태에 따라 주입
+        likeIcon.classList.remove('fas', 'far', 'liked');
+        if (isLiked) {
+            likeIcon.classList.add('fas', 'fa-heart', 'liked');
+        } else {
+            likeIcon.classList.add('far', 'fa-heart');
+        }
     }
     
     const likeCountEl = document.getElementById('dtLikeCount');
     if (likeCountEl) {
-        likeCountEl.innerText = Object.keys(likedBy).length;
+        likeCountEl.innerText = likedBy ? Object.keys(likedBy).length : 0;
     }
 }
 
