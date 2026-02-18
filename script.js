@@ -144,11 +144,13 @@ window.loadBoard = (name) => {
 
 // --- 게시글 로직 ---
 onValue(ref(db, 'posts'), (snapshot) => {
-    // [보호막] 입력창에 포커스가 가 있거나 글자가 있으면 리스너를 완전히 중단함
-    const commentInput = document.getElementById('dtCommentInput');
-    if (commentInput && (document.activeElement === commentInput || commentInput.value.trim().length > 0)) {
-        return; 
-    }
+    // [통합 보호막] 현재 포커스가 input이나 textarea에 있으면 리스너를 완전히 중단함
+    // 댓글창뿐만 아니라 글쓰기 모달(제목, 내용) 입력 시에도 리스너 간섭을 100% 차단합니다.
+    const activeEl = document.activeElement;
+    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+    
+    // 만약 어떤 입력창이라도 포커스 중이라면, 데이터가 변해도 화면을 다시 그리지 않음
+    if (isTyping) return; 
 
     const data = snapshot.val();
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
@@ -163,7 +165,7 @@ onValue(ref(db, 'posts'), (snapshot) => {
             if(likeCountEl) likeCountEl.innerText = post.likedBy ? Object.keys(post.likedBy).length : 0;
             if(commentCountEl) commentCountEl.innerText = post.comments ? Object.keys(post.comments).length : 0;
             
-            // 입력 중이 아닐 때만 댓글 목록 전체 렌더링
+            // 위에서 isTyping을 체크했으므로 여기서는 안심하고 렌더링
             renderComments(post.comments); 
         }
     } else {
