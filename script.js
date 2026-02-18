@@ -144,13 +144,12 @@ window.loadBoard = (name) => {
 
 // --- 게시글 로직 ---
 onValue(ref(db, 'posts'), (snapshot) => {
-    // [통합 보호막] 현재 포커스가 input이나 textarea에 있으면 리스너를 완전히 중단함
-    // 댓글창뿐만 아니라 글쓰기 모달(제목, 내용) 입력 시에도 리스너 간섭을 100% 차단합니다.
-    const activeEl = document.activeElement;
-    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-    
-    // 만약 어떤 입력창이라도 포커스 중이라면, 데이터가 변해도 화면을 다시 그리지 않음
-    if (isTyping) return; 
+    // [핵심 수정] 어떤 요소든 현재 포커스가 가 있는 태그가 INPUT이거나 TEXTAREA면 즉시 중단
+    const activeTagName = document.activeElement ? document.activeElement.tagName : '';
+    if (activeTagName === 'INPUT' || activeTagName === 'TEXTAREA') {
+        // 사용자가 무엇이든 입력 중일 때는 배경 연산을 100% 멈춰서 자판 씹힘을 방지합니다.
+        return; 
+    }
 
     const data = snapshot.val();
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
@@ -159,25 +158,25 @@ onValue(ref(db, 'posts'), (snapshot) => {
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
         if (post) { 
-            // 수치만 갱신
+            // 수치만 갱신 (텍스트 노드 변경은 부하가 적음)
             const likeCountEl = document.getElementById('dtLikeCount');
             const commentCountEl = document.getElementById('dtCommentCount');
             if(likeCountEl) likeCountEl.innerText = post.likedBy ? Object.keys(post.likedBy).length : 0;
             if(commentCountEl) commentCountEl.innerText = post.comments ? Object.keys(post.comments).length : 0;
             
-            // 위에서 isTyping을 체크했으므로 여기서는 안심하고 렌더링
+            // 입력 중이 아님이 보장된 상태이므로 댓글 목록 렌더링
             renderComments(post.comments); 
         }
     } else {
         const boardView = document.getElementById('boardView');
         const isModalOpen = document.querySelector('.modal.active');
+        // 게시판 뷰가 활성화되어 있고, 글쓰기 모달 등이 닫혀 있을 때만 목록을 다시 그림
         if (boardView && boardView.style.display === 'block' && !isModalOpen) {
             const currentTitle = document.getElementById('currentBoardTitle').innerText;
             renderPosts(currentTitle);
         }
     }
 }, (error) => { console.error(error); });
-
 
 window.openPostModal = () => {
     document.getElementById('postTitle').value = "";
@@ -206,8 +205,16 @@ window.savePost = async () => {
         comments: {}
     };
 
-    await push(ref(db, 'posts'), postData);
-    window.closeModal('postModal');
+    try {
+        await push(ref(db, 'posts'), postData);
+        window.closeModal('postModal');
+        // 등록 직후 포커스가 사라지므로, 이때 수동으로 렌더링 호출하여 내 글이 즉시 보이게 함
+        const currentTitle = document.getElementById('currentBoardTitle').innerText;
+        renderPosts(currentTitle);
+    } catch (e) {
+        console.error(e);
+        alert("저장에 실패했습니다.");
+    }
 };
 
 function renderPosts(boardName) {
