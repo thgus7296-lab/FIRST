@@ -144,31 +144,30 @@ window.loadBoard = (name) => {
 
 // --- 게시글 로직 ---
 onValue(ref(db, 'posts'), (snapshot) => {
+    // [보호막] 입력창에 포커스가 가 있거나 글자가 있으면 리스너를 완전히 중단함
+    const commentInput = document.getElementById('dtCommentInput');
+    if (commentInput && (document.activeElement === commentInput || commentInput.value.trim().length > 0)) {
+        return; 
+    }
+
     const data = snapshot.val();
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp); 
 
-    const commentInput = document.getElementById('dtCommentInput');
-    // 포커스 여부뿐만 아니라 실제 입력 값이 있으면 리렌더링을 완전히 차단하여 자판 씹힘 방지
-    const isTyping = (document.activeElement === commentInput) || (commentInput && commentInput.value.trim().length > 0);
-
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
         if (post) { 
-            // 1. 좋아요 숫자 등 텍스트 노드만 안전하게 업데이트
+            // 수치만 갱신
             const likeCountEl = document.getElementById('dtLikeCount');
             const commentCountEl = document.getElementById('dtCommentCount');
             if(likeCountEl) likeCountEl.innerText = post.likedBy ? Object.keys(post.likedBy).length : 0;
             if(commentCountEl) commentCountEl.innerText = post.comments ? Object.keys(post.comments).length : 0;
             
-            // 2. 입력 중이 아닐 때만(isTyping이 false일 때만) DOM 구조를 새로 그림
-            if (!isTyping) {
-                renderComments(post.comments); 
-            }
+            // 입력 중이 아닐 때만 댓글 목록 전체 렌더링
+            renderComments(post.comments); 
         }
     } else {
         const boardView = document.getElementById('boardView');
-        // 게시판 목록 화면이고, 글쓰기/로그인 등의 모달이 하나도 안 열려있을 때만 목록 갱신
         const isModalOpen = document.querySelector('.modal.active');
         if (boardView && boardView.style.display === 'block' && !isModalOpen) {
             const currentTitle = document.getElementById('currentBoardTitle').innerText;
