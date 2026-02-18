@@ -148,28 +148,33 @@ onValue(ref(db, 'posts'), (snapshot) => {
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp); 
 
+    // 현재 사용자가 글을 상세하게 보고 있을 때
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
         if (post) { 
-            // 통계값(좋아요/조회수 수치)만 업데이트하고 목록은 다시 그리지 않음
-            updateDetailStats(post); 
-            
-            // 사용자가 입력 중이 아닐 때만 렌더링하도록 더 엄격하게 제어
+            // 1. 숫자 통계(좋아요 수 등)만 글자만 바꿔서 업데이트 (화면 전체 다시 그리기 방지)
+            const likeCountEl = document.getElementById('dtLikeCount');
+            const commentCountEl = document.getElementById('dtCommentCount');
+            if(likeCountEl) likeCountEl.innerText = post.likedBy ? Object.keys(post.likedBy).length : 0;
+            if(commentCountEl) commentCountEl.innerText = post.comments ? Object.keys(post.comments).length : 0;
+
+            // 2. 입력창에 포커스가 없을 때만 댓글 목록을 갱신 (입력 끊김 방지)
             const commentInput = document.getElementById('dtCommentInput');
-            if (commentInput !== document.activeElement && commentInput.value.length === 0) {
+            if (document.activeElement !== commentInput) {
                 renderComments(post.comments); 
             }
         }
+    } else {
+        // 메인 목록에 있을 때만 목록 렌더링 (상세보기 중에는 메인 목록을 그리지 않음)
+        const boardView = document.getElementById('boardView');
+        if (boardView && boardView.style.display === 'block') {
+            const currentTitle = document.getElementById('currentBoardTitle').innerText;
+            renderPosts(currentTitle);
+        }
     }
-    
-    // 메인 목록 업데이트 시에도 입력창 상태를 확인하여 간섭 최소화
-    const postModal = document.getElementById('postModal');
-    if (postModal.style.display !== 'block') {
-        const currentTitle = document.getElementById('currentBoardTitle').innerText;
-        if (document.getElementById('boardView').style.display !== 'none') renderPosts(currentTitle);
-    }
+}, (error) => {
+    console.error("Data Load Error:", error);
 });
-
 window.openPostModal = () => {
     document.getElementById('postTitle').value = "";
     document.getElementById('postContent').value = "";
@@ -205,6 +210,14 @@ function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     const filtered = window.allPosts.filter(p => p.board === boardName);
     
+    // 기기 식별용 ID 가져오기
+    let deviceId = localStorage.getItem('h1_device_id');
+    if (!deviceId) {
+        deviceId = 'anon_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('h1_device_id', deviceId);
+    }
+    const myId = window.isLoggedIn ? window.currentUser.empId : deviceId;
+
     if(filtered.length === 0) {
         listDiv.innerHTML = '<p style="padding:20px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
         return;
@@ -212,6 +225,8 @@ function renderPosts(boardName) {
 
     listDiv.innerHTML = filtered.map(p => {
         const displayContent = p.content.length > 10 ? p.content.substring(0, 10) + "..." : p.content;
+        // 하트 색상 결정 로직 수정
+        const isLiked = p.likedBy && p.likedBy[myId];
         return `
             <div class="post-item" onclick="openPostDetail('${p.id}')">
                 <div class="post-user-info">
@@ -221,8 +236,8 @@ function renderPosts(boardName) {
                 <h4 class="post-title">${p.title}</h4>
                 <p class="post-summary">${displayContent}</p>
                 <div class="post-stats">
-                    <span>
-                        <i class="${(window.isLoggedIn && p.likedBy && p.likedBy[window.currentUser.empId]) ? 'fas fa-heart liked' : 'far fa-heart'}"></i> 
+                    <span onclick="event.stopPropagation(); window.toggleLike('${p.id}')">
+                        <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> 
                         <small>${p.likedBy ? Object.keys(p.likedBy).length : 0}</small>
                     </span>
                     <span><i class="far fa-comment"></i> <small>${p.comments ? Object.keys(p.comments).length : 0}</small></span>
