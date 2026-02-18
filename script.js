@@ -149,19 +149,19 @@ onValue(ref(db, 'posts'), (snapshot) => {
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp); 
 
     const commentInput = document.getElementById('dtCommentInput');
-    // 현재 입력창에 포커스가 있거나, 입력된 글자가 있는 경우 '입력 중'으로 간주
-    const isTyping = (document.activeElement === commentInput) || (commentInput && commentInput.value.length > 0);
+    // 포커스 여부뿐만 아니라 실제 입력 값이 있으면 리렌더링을 완전히 차단하여 자판 씹힘 방지
+    const isTyping = (document.activeElement === commentInput) || (commentInput && commentInput.value.trim().length > 0);
 
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
         if (post) { 
-            // 1. 숫자 수치만 업데이트 (화면 전체를 다시 그리지 않음)
+            // 1. 좋아요 숫자 등 텍스트 노드만 안전하게 업데이트
             const likeCountEl = document.getElementById('dtLikeCount');
             const commentCountEl = document.getElementById('dtCommentCount');
             if(likeCountEl) likeCountEl.innerText = post.likedBy ? Object.keys(post.likedBy).length : 0;
             if(commentCountEl) commentCountEl.innerText = post.comments ? Object.keys(post.comments).length : 0;
             
-            // 2. 입력 중이 절대 아닐 때만 댓글 목록을 다시 그림
+            // 2. 입력 중이 아닐 때만(isTyping이 false일 때만) DOM 구조를 새로 그림
             if (!isTyping) {
                 renderComments(post.comments); 
             }
@@ -305,20 +305,38 @@ function renderComments(commentsObj) {
 
 window.submitComment = async () => {
     const input = document.getElementById('dtCommentInput');
-    if (!input.value.trim() || !window.currentViewingPostId) return;
-    const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
-    
-    // 비로그인 시 댓글도 랜덤 익명
+    const text = input.value.trim();
+    if (!text || !window.currentViewingPostId) return;
+
+    const postId = window.currentViewingPostId;
     const authorNick = window.isLoggedIn ? window.currentUser.nickname : getRandomAnon();
 
     const commentData = {
         author: authorNick,
-        text: input.value.trim(),
+        text: text,
         timestamp: Date.now()
     };
 
-    await push(ref(db, `posts/${post.id}/comments`), commentData);
+    // [즉시 표출] 서버 응답을 기다리지 않고 화면 하단에 바로 댓글 아이템 추가
+    const list = document.getElementById('dtCommentList');
+    const newCommentHtml = `
+        <div class="dt-comment-item">
+            <div class="dt-comment-nick">${authorNick}</div>
+            <div class="dt-comment-text">${text}</div>
+        </div>`;
+    list.insertAdjacentHTML('beforeend', newCommentHtml);
+    
+    // 입력창 즉시 비우기 및 포커스 유지 (자판 닫힘 방지)
     input.value = "";
+    input.focus();
+
+    // 서버에 실제 데이터 저장
+    try {
+        await push(ref(db, `posts/${postId}/comments`), commentData);
+    } catch (e) {
+        console.error("댓글 저장 실패:", e);
+        alert("댓글 등록에 실패했습니다.");
+    }
 };
 
 window.toggleLike = async (id) => {
