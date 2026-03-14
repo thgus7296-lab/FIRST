@@ -1,108 +1,49 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
 .main-btn { background: #065d7a; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
 
-header { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 10px 20px; 
-    border-bottom: 1px solid #ddd; 
-    background: #fff; 
-    position: sticky; 
-    top: 0; 
-    z-index: 100; 
-}
-
-#userInfoIcon { display: flex; align-items: center; }
-#userInfoIcon i { cursor: pointer; font-size: 18px; color: #333; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #ddd; background: #fff; position: sticky; top: 0; z-index: 100; }
 
 /* 사이드 메뉴 */
 .side-menu {
-    position: fixed;
-    top: 0;
-    left: -280px;
-    width: 280px;
-    height: 100%;
-    background: #fff;
-    z-index: 1000;
-    transition: 0.3s;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-    pointer-events: none; /* 중요: 닫혔을 때 클릭 무시 */
+    position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
+    background: #fff; z-index: 1000; transition: 0.3s; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    pointer-events: none;
 }
+.side-menu.active { left: 0; pointer-events: auto; }
+.side-menu li { padding: 15px 20px; border-bottom: 1px solid #eee; cursor: pointer; list-style: none; font-size: 14px; }
 
-.side-menu.active {
-    left: 0;
-    pointer-events: auto; /* 중요: 열렸을 때 클릭 허용 */
+/* [원복] 게시판 비주얼 (배너와 프로필 겹침 레이아웃) */
+.board-visual-area { position: relative; width: 100%; margin-bottom: 50px; }
+.rect-banner { width: 100%; height: 160px; overflow: hidden; background: #eee; }
+.rect-banner img { width: 100%; height: 100%; object-fit: cover; }
+.circle-profile { 
+    position: absolute; bottom: -40px; left: 20px; 
+    width: 80px; height: 80px; border-radius: 50%; 
+    border: 4px solid white; overflow: hidden; background: #fff; z-index: 10; 
 }
+.circle-profile img { width: 100%; height: 100%; object-fit: cover; }
 
-.side-menu li { 
-    padding: 12px 20px; 
-    border-bottom: 1px solid #eee; 
-    cursor: pointer; 
-    list-style: none;
-    font-size: 14px; 
-    color: #333;
-}
+.board-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; margin-top: 10px; border-bottom: 1px solid #eee; }
 
-.side-menu h3 {
-    padding: 20px;
-    font-size: 18px;
-    border-bottom: 2px solid #065d7a;
-    color: #065d7a;
-    font-weight: bold;
-}
+/* 게시글 목록 스타일 */
+.post-item { padding: 15px; border-bottom: 1px solid #f0f0f0; background: #fff; cursor: pointer; }
+.post-user-info { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
+.nickname { font-weight: bold; font-size: 14px; }
+.post-date { font-size: 12px; color: #aaa; }
+.post-title { font-size: 16px; margin-bottom: 5px; color: #222; }
+.post-summary { font-size: 14px; color: #666; line-height: 1.4; }
+.post-stats { display: flex; gap: 15px; color: #888; font-size: 13px; margin-top: 10px; }
+
+/* 상세 페이지 및 댓글 */
+#postDetailView { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1500; overflow-y: auto; }
+.detail-top-nav { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f1f1; background: #fff; position: sticky; top: 0; }
+.dt-input-area { position: fixed; bottom: 0; left: 0; width: 100%; padding: 12px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; }
+.dt-input-area input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
+.dt-comment-item { padding: 10px 20px; border-bottom: 1px solid #f9f9f9; }
+.dt-comment-nick { font-weight: bold; font-size: 13px; }
 
 /* 모달 */
-.modal { 
-    display: none; 
-    position: fixed; 
-    z-index: 2000; 
-    left: 0; 
-    top: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: rgba(0,0,0,0.6); 
-}
-
+.modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
 .modal.active { display: block; }
-
-.modal-content { 
-    background: white; 
-    margin: 15vh auto; 
-    padding: 25px; 
-    width: 90%; 
-    max-width: 400px; 
-    border-radius: 12px; 
-    position: relative; 
-}
-
-.modal-content input, .modal-content textarea { 
-    width: 100%; 
-    padding: 12px; 
-    margin: 8px 0; 
-    border: 1px solid #ddd; 
-    border-radius: 5px; 
-}
-
-.close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #888; }
-
-/* 게시판 목록 및 상세 */
-.post-item { padding: 15px; border-bottom: 1px solid #f0f0f0; background: #fff; cursor: pointer; }
-.post-title { font-size: 16px; margin-bottom: 5px; color: #222; }
-.post-stats { display: flex; gap: 15px; color: #888; font-size: 14px; }
-.fa-heart.liked { color: #ff0000 !important; }
-
-#postDetailView { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: #fff; 
-    z-index: 1500; 
-    overflow-y: auto; 
-}
-
-.detail-top-nav { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f1f1; position: sticky; top: 0; background: #fff; }
-.dt-input-area { position: fixed; bottom: 0; left: 0; width: 100%; padding: 12px 15px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; }
-.dt-input-area input { flex: 1; padding: 12px; border: 1px solid #eee; border-radius: 25px; background: #f8f8f8; outline: none; }
+.modal-content { background: white; margin: 15vh auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; }
+.modal-content input, .modal-content textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; }
