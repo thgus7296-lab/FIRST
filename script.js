@@ -20,7 +20,6 @@ window.isLoggedIn = false;
 window.allPosts = [];
 window.currentViewingPostId = null;
 
-// [추가] 비로그인 사용자를 위한 임시 ID 생성 (브라우저 쿠키와 유사한 역할)
 if (!localStorage.getItem('anonymousId')) {
     localStorage.setItem('anonymousId', 'anon_' + Math.random().toString(36).substr(2, 9));
 }
@@ -33,7 +32,14 @@ const loungeSettings = {
     '퀴즈': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
+// [수정] 뒤로가기 시 메뉴가 열려있으면 메뉴만 닫음
 window.onpopstate = (event) => {
+    const sideMenu = document.getElementById('sideMenu');
+    if (sideMenu.classList.contains('active')) {
+        closeMenuInternal(); // 메뉴 닫기
+        return;
+    }
+
     const state = event.state;
     if (!state || state.view === 'home') {
         window.goHome(true);
@@ -59,13 +65,34 @@ window.closeModal = (id) => {
 };
 
 window.closeModalByOutside = (e, id) => { if (e.target.id === id) window.closeModal(id); };
-window.toggleMenu = () => document.getElementById('sideMenu').classList.toggle('active');
+
+// [수정] 메뉴 열 때 히스토리 추가, 닫을 때 히스토리 백
+window.toggleMenu = () => {
+    const sideMenu = document.getElementById('sideMenu');
+    const overlay = document.getElementById('menuOverlay');
+    const isActive = sideMenu.classList.contains('active');
+
+    if (!isActive) {
+        sideMenu.classList.add('active');
+        overlay.classList.add('active');
+        // 메뉴가 열렸다는 가짜 상태를 추가하여 '뒤로가기'를 가로챔
+        history.pushState({ menu: 'open' }, "");
+    } else {
+        history.back(); // 뒤로가기를 실행하여 onpopstate에서 닫히게 함
+    }
+};
+
+// 내부적으로 메뉴만 닫는 함수
+function closeMenuInternal() {
+    document.getElementById('sideMenu').classList.remove('active');
+    document.getElementById('menuOverlay').classList.remove('active');
+}
 
 window.goHome = (isBack = false) => {
     document.getElementById('homeView').style.display = 'block';
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'none';
-    document.getElementById('sideMenu').classList.remove('active');
+    closeMenuInternal();
     if (!isBack) pushHistory({ view: 'home' });
 };
 
@@ -77,7 +104,7 @@ window.loadBoard = (name, isBack = false) => {
     const setting = loungeSettings[name] || loungeSettings['칭찬 라운지'];
     document.getElementById('bgDisplay').src = setting.bg;
     document.getElementById('profileDisplay').src = setting.profile;
-    document.getElementById('sideMenu').classList.remove('active');
+    closeMenuInternal();
     renderPosts(name);
     if (!isBack) pushHistory({ view: 'board', boardName: name });
 };
@@ -182,7 +209,6 @@ window.openPostDetail = (id) => {
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
     
-    // 좋아요 상태 표시 업데이트 (방문자 ID 기준)
     const visitorId = getVisitorId();
     const likeCount = post.likedBy ? Object.keys(post.likedBy).length : 0;
     document.getElementById('dtLikeCount').innerText = likeCount;
@@ -198,13 +224,11 @@ window.openPostDetail = (id) => {
     pushHistory({ view: 'detail', postId: id, boardName: post.board });
 };
 
-// [수정] 로그인이 없어도 좋아요가 가능하도록 변경
 window.handleLikeInDetail = async () => {
-    const visitorId = getVisitorId(); // 로그인ID 또는 익명ID 가져오기
+    const visitorId = getVisitorId(); 
     const postRef = ref(db, `posts/${window.currentViewingPostId}/likedBy/${visitorId}`);
     const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
     
-    // 이미 해당 ID로 좋아요를 눌렀다면 취소, 아니면 추가
     if (post.likedBy && post.likedBy[visitorId]) {
         await remove(postRef);
     } else {
@@ -267,8 +291,6 @@ onValue(ref(db, 'posts'), (snapshot) => {
         const p = window.allPosts.find(x => x.id === window.currentViewingPostId);
         if (p) {
             document.getElementById('dtLikeCount').innerText = p.likedBy ? Object.keys(p.likedBy).length : 0;
-            
-            // 실시간 하트 아이콘 업데이트 추가
             const visitorId = getVisitorId();
             const isLiked = p.likedBy && p.likedBy[visitorId];
             const likeIcon = document.getElementById('dtLikeIcon');
