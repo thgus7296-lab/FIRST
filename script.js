@@ -51,7 +51,7 @@ window.closeModalByOutside = (event, id) => { if (event.target.id === id) window
 document.addEventListener('click', (e) => {
     const menu = document.getElementById('sideMenu');
     const headerLeft = document.querySelector('.header-left');
-    if (menu.classList.contains('active') && !menu.contains(e.target) && !headerLeft.contains(e.target)) {
+    if (menu && menu.classList.contains('active') && !menu.contains(e.target) && !headerLeft.contains(e.target)) {
         menu.classList.remove('active');
         if (history.state && history.state.menuOpen) history.back();
     }
@@ -61,10 +61,8 @@ window.handleLogin = async () => {
     const empId = document.getElementById('loginEmpId').value.trim();
     const pw = document.getElementById('loginPw').value.trim();
     if (!empId || !pw) { alert("사번과 비밀번호를 입력해주세요."); return; }
-
     let userRole = "일반";
     let nickname = "";
-
     if (empId === "724" && pw === "724") {
         userRole = "관리자"; nickname = "관리자";
     } else if (empId === "1" && pw === "whalsdud") {
@@ -73,7 +71,6 @@ window.handleLogin = async () => {
         const userNum = empId.slice(-2).padStart(2, '0');
         nickname = `익명${userNum}`;
     }
-
     successLogin({ empId, role: userRole, nickname });
 };
 
@@ -123,43 +120,27 @@ window.loadBoard = (name) => {
     document.getElementById('bgDisplay').src = setting.bg;
     document.getElementById('profileDisplay').src = setting.profile;
     
-    const menu = document.getElementById('sideMenu');
-    if (menu.classList.contains('active')) {
-        menu.classList.remove('active');
-    }
-    
+    document.getElementById('sideMenu').classList.remove('active');
     renderPosts(name);
     history.pushState({ view: 'board', boardName: name }, '');
 };
 
 onValue(ref(db, 'posts'), (snapshot) => {
-    const activeTagName = document.activeElement ? document.activeElement.tagName : '';
-    if (activeTagName === 'INPUT' || activeTagName === 'TEXTAREA') {
-        return; 
-    }
-
     const data = snapshot.val();
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp); 
 
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
-        if (post) { 
-            const likeCountEl = document.getElementById('dtLikeCount');
-            const commentCountEl = document.getElementById('dtCommentCount');
-            if(likeCountEl) likeCountEl.innerText = post.likedBy ? Object.keys(post.likedBy).length : 0;
-            if(commentCountEl) commentCountEl.innerText = post.comments ? Object.keys(post.comments).length : 0;
-            renderComments(post.comments); 
-        }
+        if (post) renderComments(post.comments); 
     } else {
         const boardView = document.getElementById('boardView');
-        const isModalOpen = document.querySelector('.modal.active');
-        if (boardView && boardView.style.display === 'block' && !isModalOpen) {
+        if (boardView && boardView.style.display === 'block') {
             const currentTitle = document.getElementById('currentBoardTitle').innerText;
             renderPosts(currentTitle);
         }
     }
-}, (error) => { console.error(error); });
+});
 
 window.openPostModal = () => {
     document.getElementById('postTitle').value = "";
@@ -170,12 +151,9 @@ window.openPostModal = () => {
 window.savePost = async () => {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
-    const boardEl = document.getElementById('currentBoardTitle');
-    const board = boardEl ? boardEl.innerText : "";
+    const board = document.getElementById('currentBoardTitle').innerText;
 
-    // 1. 필수 값 체크 강화
     if (!title || !content) { alert("내용을 입력해주세요"); return; }
-    if (!board || board === "게시판 이름") { alert("게시판 정보가 올바르지 않습니다."); return; }
 
     const authorNick = window.isLoggedIn ? window.currentUser.nickname : getRandomAnon();
     const authorId = window.isLoggedIn ? window.currentUser.empId : "anonymous";
@@ -191,24 +169,12 @@ window.savePost = async () => {
     };
 
     try {
-        // 2. Firebase 저장 시도
         await push(ref(db, 'posts'), postData);
         window.closeModal('postModal');
         renderPosts(board);
     } catch (e) {
-        // 3. 에러 발생 시 콘솔에 상세 원인 출력 (F12 개발자 도구에서 확인 가능)
-        console.error("Firebase 저장 에러 원인:", e);
-        alert("저장에 실패했습니다. Firebase Database의 Rules(규칙) 설정을 확인해주세요.");
-    }
-};
-    try {
-        await push(ref(db, 'posts'), postData);
-        window.closeModal('postModal');
-        const currentTitle = document.getElementById('currentBoardTitle').innerText;
-        renderPosts(currentTitle);
-    } catch (e) {
         console.error(e);
-        alert("저장에 실패했습니다.");
+        alert("저장에 실패했습니다. Firebase 규칙을 확인하세요.");
     }
 };
 
@@ -216,11 +182,8 @@ function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     const filtered = window.allPosts.filter(p => p.board === boardName);
     
-    let deviceId = localStorage.getItem('h1_device_id');
-    if (!deviceId) {
-        deviceId = 'anon_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('h1_device_id', deviceId);
-    }
+    let deviceId = localStorage.getItem('h1_device_id') || 'anon_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('h1_device_id', deviceId);
     const myId = window.isLoggedIn ? window.currentUser.empId : deviceId;
 
     if(filtered.length === 0) {
@@ -229,7 +192,6 @@ function renderPosts(boardName) {
     }
 
     listDiv.innerHTML = filtered.map(p => {
-        const displayContent = p.content.length > 10 ? p.content.substring(0, 10) + "..." : p.content;
         const isLiked = p.likedBy && p.likedBy[myId];
         return `
             <div class="post-item" onclick="openPostDetail('${p.id}')">
@@ -238,14 +200,12 @@ function renderPosts(boardName) {
                     <span class="post-date">${timeSince(p.timestamp)}</span>
                 </div>
                 <h4 class="post-title">${p.title}</h4>
-                <p class="post-summary">${displayContent}</p>
                 <div class="post-stats">
                     <span onclick="event.stopPropagation(); window.toggleLike('${p.id}')">
                         <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> 
                         <small>${p.likedBy ? Object.keys(p.likedBy).length : 0}</small>
                     </span>
                     <span><i class="far fa-comment"></i> <small>${p.comments ? Object.keys(p.comments).length : 0}</small></span>
-                    <span><i class="far fa-eye"></i> <small>${p.views || 0}</small></span>
                 </div>
             </div>`;
     }).join('');
@@ -254,28 +214,16 @@ function renderPosts(boardName) {
 window.openPostDetail = (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if(!post) return;
-
-    if (post.board === "신문고") {
-        const isAuth = window.isLoggedIn && ["관리자", "공장장"].includes(window.currentUser.role);
-        if (!isAuth) {
-            alert("신문고 게시글 열람은 공장장만 가능합니다.");
-            return;
-        }
+    if (post.board === "신문고" && !(window.isLoggedIn && ["관리자", "공장장"].includes(window.currentUser.role))) {
+        alert("권한이 없습니다."); return;
     }
-
     window.currentViewingPostId = id;
-    update(ref(db, `posts/${id}`), { views: (post.views || 0) + 1 });
-    
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'block';
     document.getElementById('dtNickname').innerText = post.author;
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
-    
-    const canDelete = window.isLoggedIn && (post.authorId === window.currentUser.empId || window.currentUser.role === "관리자");
-    document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
-    
     updateDetailStats(post);
     renderComments(post.comments);
     history.pushState({ view: 'detail', postId: id }, '');
@@ -286,152 +234,61 @@ window.closePostDetail = () => {
     history.back();
 };
 
-window.deletePost = async () => {
-    if (!confirm("삭제하시겠습니까?")) return;
-    await remove(ref(db, `posts/${window.currentViewingPostId}`));
-    window.closePostDetail();
-};
-
 function renderComments(commentsObj) {
     const list = document.getElementById('dtCommentList');
     const comments = commentsObj ? Object.values(commentsObj) : [];
     document.getElementById('dtCommentCount').innerText = comments.length;
-    list.innerHTML = comments.map(c => `
-        <div class="dt-comment-item">
-            <div class="dt-comment-nick">${c.author}</div>
-            <div class="dt-comment-text">${c.text}</div>
-        </div>`).join('');
+    list.innerHTML = comments.map(c => `<div class="dt-comment-item"><b>${c.author}</b>: ${c.text}</div>`).join('');
 }
 
 window.submitComment = async () => {
     const input = document.getElementById('dtCommentInput');
     const text = input.value.trim();
     if (!text || !window.currentViewingPostId) return;
-
-    const postId = window.currentViewingPostId;
     const authorNick = window.isLoggedIn ? window.currentUser.nickname : getRandomAnon();
-
-    const commentData = {
-        author: authorNick,
-        text: text,
-        timestamp: Date.now()
-    };
-
-    const list = document.getElementById('dtCommentList');
-    const newCommentHtml = `
-        <div class="dt-comment-item">
-            <div class="dt-comment-nick">${authorNick}</div>
-            <div class="dt-comment-text">${text}</div>
-        </div>`;
-    list.insertAdjacentHTML('beforeend', newCommentHtml);
-    
+    await push(ref(db, `posts/${window.currentViewingPostId}/comments`), { author: authorNick, text: text, timestamp: Date.now() });
     input.value = "";
-    input.focus();
-
-    try {
-        await push(ref(db, `posts/${postId}/comments`), commentData);
-    } catch (e) {
-        console.error("댓글 저장 실패:", e);
-        alert("댓글 등록에 실패했습니다.");
-    }
 };
 
 window.toggleLike = async (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
-
-    let deviceId = localStorage.getItem('h1_device_id');
-    if (!deviceId) {
-        deviceId = 'anon_' + Math.random().toString(36).substring(2, 11);
-        localStorage.setItem('h1_device_id', deviceId);
-    }
-    const myId = window.isLoggedIn ? window.currentUser.empId : deviceId;
-    
+    const myId = window.isLoggedIn ? window.currentUser.empId : localStorage.getItem('h1_device_id');
     const likedBy = post.likedBy || {};
-    if (likedBy[myId]) {
-        delete likedBy[myId];
-    } else {
-        likedBy[myId] = true;
-    }
-    
+    likedBy[myId] ? delete likedBy[myId] : likedBy[myId] = true;
     await set(ref(db, `posts/${id}/likedBy`), likedBy);
-    
-    post.likedBy = likedBy;
-    if (window.currentViewingPostId === id) updateDetailStats(post);
 };
 
 window.handleLikeInDetail = () => window.toggleLike(window.currentViewingPostId);
 
 function updateDetailStats(post) {
     const likedBy = post.likedBy || {};
-    const deviceId = localStorage.getItem('h1_device_id');
-    const myId = window.isLoggedIn ? window.currentUser.empId : deviceId;
-
-    const isLiked = likedBy && likedBy[myId];
-    const likeIcon = document.getElementById('dtLikeIcon');
-    
-    if (likeIcon) {
-        likeIcon.classList.remove('fas', 'far', 'liked');
-        if (isLiked) {
-            likeIcon.classList.add('fas', 'fa-heart', 'liked');
-        } else {
-            likeIcon.classList.add('far', 'fa-heart');
-        }
-    }
-    
-    const likeCountEl = document.getElementById('dtLikeCount');
-    if (likeCountEl) {
-        likeCountEl.innerText = likedBy ? Object.keys(likedBy).length : 0;
-    }
+    const myId = window.isLoggedIn ? window.currentUser.empId : localStorage.getItem('h1_device_id');
+    const isLiked = likedBy[myId];
+    const icon = document.getElementById('dtLikeIcon');
+    icon.className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
+    document.getElementById('dtLikeCount').innerText = Object.keys(likedBy).length;
 }
 
 function timeSince(date) {
     const seconds = Math.floor((new Date() - date) / 1000);
     if (seconds < 60) return "방금 전";
     if (seconds < 3600) return Math.floor(seconds / 60) + "분 전";
-    if (seconds < 86400) return Math.floor(seconds / 3600) + "시간 전";
     return Math.floor(seconds / 86400) + "일 전";
 }
 
 window.onpopstate = (event) => {
     const state = event.state;
-    const menu = document.getElementById('sideMenu');
-
-    if (menu.classList.contains('active')) {
-        menu.classList.remove('active');
-        return;
-    }
-
-    if (!state || !state.modalOpen) {
-        document.querySelectorAll('.modal').forEach(m => {
-            m.style.display = 'none';
-            m.classList.remove('active');
-        });
-    }
-
     if (state && state.view === 'board') {
         document.getElementById('homeView').style.display = 'none';
         document.getElementById('boardView').style.display = 'block';
         document.getElementById('postDetailView').style.display = 'none';
         renderPosts(state.boardName);
     } else if (state && state.view === 'detail') {
-        const post = window.allPosts.find(p => p.id === state.postId);
-        if (post) {
-            document.getElementById('boardView').style.display = 'none';
-            document.getElementById('postDetailView').style.display = 'block';
-            document.getElementById('dtNickname').innerText = post.author;
-            document.getElementById('dtTitle').innerText = post.title;
-            document.getElementById('dtContent').innerText = post.content;
-            renderComments(post.comments);
-        }
+        window.openPostDetail(state.postId);
     } else {
-        document.getElementById('homeView').style.display = 'block';
-        document.getElementById('boardView').style.display = 'none';
-        document.getElementById('postDetailView').style.display = 'none';
-        window.currentViewingPostId = null;
+        window.goHome();
     }
 };
 
-window.onload = () => {
-    history.replaceState({ view: 'home' }, '');
-};
+window.onload = () => history.replaceState({ view: 'home' }, '');
