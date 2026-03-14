@@ -69,9 +69,9 @@ window.handleLogin = async () => {
     let userRole = "일반";
     let nickname = "";
 
-    if (empId === "1" && pw === "1") {
+    if (empId === "724" && pw === "724") {
         userRole = "관리자"; nickname = "관리자";
-    } else if (empId === "2000" && pw === "2000") {
+    } else if (empId === "1" && pw === "whalsdud") {
         userRole = "공장장"; nickname = "공장장";
     } else {
         const userNum = empId.slice(-2).padStart(2, '0');
