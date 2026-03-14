@@ -12,9 +12,16 @@ header { display: flex; justify-content: space-between; align-items: center; pad
     width: 280px;
     height: 100%;
     background: #fff;
-    z-index: 200;
+    z-index: 1000; /* 레이어 순위 상향 */
     transition: 0.3s;
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    pointer-events: none; /* 닫혀 있을 때 하단 버튼 클릭 방해 방지 */
+}
+
+/* 메뉴 활성화 상태 */
+.side-menu.active {
+    left: 0;
+    pointer-events: auto; /* 열렸을 때만 클릭 허용 */
 }
 
 /* 메뉴 활성화 상태 */
@@ -42,7 +49,16 @@ header { display: flex; justify-content: space-between; align-items: center; pad
     color: #065d7a;
     font-weight: bold;
 }
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+.modal { 
+    display: none; 
+    position: fixed; 
+    z-index: 2000; /* 모든 요소 중 가장 위에 오도록 수정 */
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.6); 
+}
 .modal.active { display: block; }
 .modal-content { background: white; margin: 15vh auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; position: relative; z-index: 1001; }
 .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
@@ -64,7 +80,16 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .circle-profile img { width: 100%; height: 100%; object-fit: cover; }
 .admin-edit-btn { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,0.5); color: #fff; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; z-index: 15; }
 .board-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; }
-#postDetailView { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 500; overflow-y: auto; }
+#postDetailView { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: #fff; 
+    z-index: 1500; /* 메뉴(1000)보다 위에 오도록 수정 */
+    overflow-y: auto; 
+}
 .detail-top-nav { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f1f1; position: sticky; top: 0; background: #fff; }
 .detail-back { font-size: 20px; margin-right: 15px; cursor: pointer; }
 .detail-logo-text { font-weight: bold; font-size: 18px; color: #333; }
