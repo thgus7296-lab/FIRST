@@ -169,8 +169,35 @@ window.saveLoungeImages = async () => {
     const readFile = (file) => new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => { alert("파일을 읽는 중 오류가 발생했습니다."); };
         reader.readAsDataURL(file);
     });
+
+    try {
+        const updates = {};
+        if (bgFile) {
+            const bgData = await readFile(bgFile);
+            updates[`/loungeSettings/${boardName}/bg`] = bgData;
+        }
+        if (profileFile) {
+            const profileData = await readFile(profileFile);
+            updates[`/loungeSettings/${boardName}/profile`] = profileData;
+        }
+
+        // update(ref(db), updates) 방식을 사용하여 경로가 없어도 생성하며 저장
+        await update(ref(db), updates);
+        
+        alert("이미지가 성공적으로 변경되었습니다.");
+        window.closeModal('imgEditModal');
+        
+        // 입력창 초기화
+        document.getElementById('bgInput').value = "";
+        document.getElementById('profileInput').value = "";
+    } catch (e) {
+        console.error("이미지 저장 오류:", e);
+        alert("저장에 실패했습니다.");
+    }
+};
 
     try {
         let updates = {};
@@ -237,19 +264,32 @@ window.savePost = async () => {
 
     if (!title || !content) { alert("내용을 입력해주세요"); return; }
 
-    // 비로그인 시 랜덤 익명 부여
     const authorNick = window.isLoggedIn ? window.currentUser.nickname : getRandomAnon();
     const authorId = window.isLoggedIn ? window.currentUser.empId : "anonymous";
 
     const postData = {
-        board, title, content,
+        board: board,
+        title: title,
+        content: content,
         author: authorNick,
         authorId: authorId,
         timestamp: Date.now(),
-        views: 0,
-        likedBy: {},
-        comments: {}
+        views: 0
     };
+
+    try {
+        // push를 통해 새로운 고유 ID로 게시글 저장
+        const postsRef = ref(db, 'posts');
+        await push(postsRef, postData);
+        
+        window.closeModal('postModal');
+        // 저장 후 즉시 해당 게시판 리스트 갱신
+        renderPosts(board);
+    } catch (e) {
+        console.error("게시글 저장 오류:", e);
+        alert("저장에 실패했습니다.");
+    }
+};
 
     try {
         await push(ref(db, 'posts'), postData);
