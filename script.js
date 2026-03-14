@@ -97,21 +97,15 @@ window.loadBoard = (name, isBack = false) => {
     document.getElementById('postDetailView').style.display = 'none';
     document.getElementById('currentBoardTitle').innerText = name;
     
-    // [수정] 배경 문구 및 컬러 설정 (에러 방지 로직 포함)
     const setting = loungeSettings[name] || { text: '함께 소통하는 공간입니다.', color: '#065d7a' };
-    const bgTextElement = document.getElementById('bgText');
-    const bgBannerElement = document.getElementById('bgBanner');
-    
-    if (bgTextElement) bgTextElement.innerText = setting.text;
-    if (bgBannerElement) bgBannerElement.style.background = setting.color;
-    
-    const profileArea = document.getElementById('profileArea');
-    if (profileArea) profileArea.style.display = 'none'; 
+    document.getElementById('bgText').innerText = setting.text;
+    document.getElementById('bgBanner').style.background = setting.color;
+    document.getElementById('profileArea').style.display = 'none';
 
     closeMenuInternal();
     renderPosts(name);
 
-    // [중요 수정] 게시판 이동 시 히스토리를 쌓지 않고 '교체'하여 뒤로가기 시 홈으로 이동
+    // [수정 핵심] pushHistory 대신 replaceState를 사용하여 히스토리가 쌓이지 않게 함
     if (!isBack) {
         history.replaceState({ view: 'board', boardName: name }, "");
     }
