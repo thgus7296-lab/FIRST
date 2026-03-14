@@ -18,7 +18,17 @@ header h1 { font-size: 18px; color: #065d7a; letter-spacing: -1px; }
 
 /* 게시판 상단 비주얼 (배경 문구 중심) */
 .board-visual-area { position: relative; width: 100%; margin-bottom: 0; }
-.rect-banner { width: 100%; height: 160px; background: #065d7a; display: flex; justify-content: center; align-items: center; padding: 20px; text-align: center; transition: background 0.5s; }
+.rect-banner { 
+    width: 100%; 
+    height: 160px; 
+    background: #065d7a; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    padding: 20px; 
+    text-align: center; 
+    transition: background 0.3s ease; /* 전환 효과 부드럽게 */
+}
 #bgText { color: white; font-size: 18px; font-weight: 700; line-height: 1.4; word-break: keep-all; }
 .circle-profile { display: none; } /* 프로필 완전 삭제 */
 
