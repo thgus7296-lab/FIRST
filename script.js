@@ -20,6 +20,12 @@ window.isLoggedIn = false;
 window.allPosts = [];
 window.currentViewingPostId = null;
 
+// [추가] 비로그인 사용자를 위한 임시 ID 생성 (브라우저 쿠키와 유사한 역할)
+if (!localStorage.getItem('anonymousId')) {
+    localStorage.setItem('anonymousId', 'anon_' + Math.random().toString(36).substr(2, 9));
+}
+const getVisitorId = () => window.isLoggedIn ? window.currentUser.empId : localStorage.getItem('anonymousId');
+
 const loungeSettings = {
     '칭찬 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
     '1공장 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
@@ -27,11 +33,10 @@ const loungeSettings = {
     '퀴즈': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
-// --- [추가 영역] 뒤로가기 제어 로직 시작 ---
 window.onpopstate = (event) => {
     const state = event.state;
     if (!state || state.view === 'home') {
-        window.goHome(true); // true는 history.push를 중복 방지하기 위함
+        window.goHome(true);
     } else if (state.view === 'board') {
         window.loadBoard(state.boardName, true);
     }
@@ -42,7 +47,6 @@ const pushHistory = (state) => {
         history.pushState(state, "");
     }
 };
-// --- [추가 영역] 뒤로가기 제어 로직 끝 ---
 
 window.openModal = (id) => {
     const modal = document.getElementById(id);
@@ -177,26 +181,35 @@ window.openPostDetail = (id) => {
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
+    
+    // 좋아요 상태 표시 업데이트 (방문자 ID 기준)
+    const visitorId = getVisitorId();
     const likeCount = post.likedBy ? Object.keys(post.likedBy).length : 0;
     document.getElementById('dtLikeCount').innerText = likeCount;
-    const isLiked = window.isLoggedIn && post.likedBy && post.likedBy[window.currentUser.empId];
+    const isLiked = post.likedBy && post.likedBy[visitorId];
     const likeIcon = document.getElementById('dtLikeIcon');
     likeIcon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
     likeIcon.style.color = isLiked ? '#ff4d4d' : '#888';
+    
     const canDelete = window.isLoggedIn && (post.authorId === window.currentUser.empId || window.currentUser.role === "관리자");
     document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
     renderComments(post.comments);
 
-    // 상세 보기 진입 시 히스토리 기록 (board 상태에서 한 단계 더 들어감)
     pushHistory({ view: 'detail', postId: id, boardName: post.board });
 };
 
+// [수정] 로그인이 없어도 좋아요가 가능하도록 변경
 window.handleLikeInDetail = async () => {
-    if (!window.isLoggedIn) return alert("로그인이 필요합니다.");
-    const postRef = ref(db, `posts/${window.currentViewingPostId}/likedBy/${window.currentUser.empId}`);
+    const visitorId = getVisitorId(); // 로그인ID 또는 익명ID 가져오기
+    const postRef = ref(db, `posts/${window.currentViewingPostId}/likedBy/${visitorId}`);
     const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
-    if (post.likedBy && post.likedBy[window.currentUser.empId]) await remove(postRef);
-    else await set(postRef, true);
+    
+    // 이미 해당 ID로 좋아요를 눌렀다면 취소, 아니면 추가
+    if (post.likedBy && post.likedBy[visitorId]) {
+        await remove(postRef);
+    } else {
+        await set(postRef, true);
+    }
 };
 
 window.submitComment = async () => {
@@ -223,7 +236,6 @@ function renderComments(commentsObj) {
 }
 
 window.closePostDetail = () => {
-    // 만약 히스토리 상 현재가 detail이라면 뒤로가기 실행
     if (history.state && history.state.view === 'detail') {
         history.back();
     } else {
@@ -255,13 +267,21 @@ onValue(ref(db, 'posts'), (snapshot) => {
         const p = window.allPosts.find(x => x.id === window.currentViewingPostId);
         if (p) {
             document.getElementById('dtLikeCount').innerText = p.likedBy ? Object.keys(p.likedBy).length : 0;
+            
+            // 실시간 하트 아이콘 업데이트 추가
+            const visitorId = getVisitorId();
+            const isLiked = p.likedBy && p.likedBy[visitorId];
+            const likeIcon = document.getElementById('dtLikeIcon');
+            if(likeIcon) {
+                likeIcon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+                likeIcon.style.color = isLiked ? '#ff4d4d' : '#888';
+            }
             renderComments(p.comments);
         }
     }
     if (document.getElementById('boardView').style.display === 'block') renderPosts(document.getElementById('currentBoardTitle').innerText);
 });
 
-// 초기 실행 시 홈 상태 기록
 window.addEventListener('load', () => {
     if (!history.state) {
         history.replaceState({ view: 'home' }, "");
