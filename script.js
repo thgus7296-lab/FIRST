@@ -27,6 +27,22 @@ let loungeSettings = {
     '신문고': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
+// --- 여기에 아래 코드를 삽입하세요 ---
+onValue(ref(db, 'loungeSettings'), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        loungeSettings = { ...loungeSettings, ...data };
+        const currentTitleEl = document.getElementById('currentBoardTitle');
+        if (currentTitleEl) {
+            const currentTitle = currentTitleEl.innerText;
+            if (loungeSettings[currentTitle]) {
+                document.getElementById('bgDisplay').src = loungeSettings[currentTitle].bg;
+                document.getElementById('profileDisplay').src = loungeSettings[currentTitle].profile;
+            }
+        }
+    }
+});
+
 // 랜덤 닉네임 생성 함수
 const getRandomAnon = () => `익명${Math.floor(Math.random() * 90 + 10)}`;
 
@@ -141,6 +157,35 @@ window.loadBoard = (name) => {
     // 4. 게시글 목록 불러오기 및 히스토리 기록
     renderPosts(name);
     history.pushState({ view: 'board', boardName: name }, '');
+};
+
+window.saveLoungeImages = async () => {
+    const boardName = document.getElementById('currentBoardTitle').innerText;
+    const bgFile = document.getElementById('bgInput').files[0];
+    const profileFile = document.getElementById('profileInput').files[0];
+    
+    if (!bgFile && !profileFile) { alert("변경할 이미지를 선택해주세요."); return; }
+
+    const readFile = (file) => new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+    });
+
+    try {
+        let updates = {};
+        if (bgFile) updates[`loungeSettings/${boardName}/bg`] = await readFile(bgFile);
+        if (profileFile) updates[`loungeSettings/${boardName}/profile`] = await readFile(profileFile);
+
+        await update(ref(db), updates);
+        alert("이미지가 성공적으로 변경되었습니다.");
+        window.closeModal('imgEditModal');
+        document.getElementById('bgInput').value = "";
+        document.getElementById('profileInput').value = "";
+    } catch (e) {
+        console.error(e);
+        alert("저장에 실패했습니다.");
+    }
 };
 
 // --- 게시글 로직 ---
