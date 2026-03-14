@@ -27,6 +27,23 @@ const loungeSettings = {
     '퀴즈': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
+// --- [추가 영역] 뒤로가기 제어 로직 시작 ---
+window.onpopstate = (event) => {
+    const state = event.state;
+    if (!state || state.view === 'home') {
+        window.goHome(true); // true는 history.push를 중복 방지하기 위함
+    } else if (state.view === 'board') {
+        window.loadBoard(state.boardName, true);
+    }
+};
+
+const pushHistory = (state) => {
+    if (!history.state || history.state.view !== state.view || history.state.boardName !== state.boardName) {
+        history.pushState(state, "");
+    }
+};
+// --- [추가 영역] 뒤로가기 제어 로직 끝 ---
+
 window.openModal = (id) => {
     const modal = document.getElementById(id);
     if (modal) { modal.style.display = 'block'; setTimeout(() => modal.classList.add('active'), 10); }
@@ -40,15 +57,15 @@ window.closeModal = (id) => {
 window.closeModalByOutside = (e, id) => { if (e.target.id === id) window.closeModal(id); };
 window.toggleMenu = () => document.getElementById('sideMenu').classList.toggle('active');
 
-window.goHome = () => {
+window.goHome = (isBack = false) => {
     document.getElementById('homeView').style.display = 'block';
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'none';
     document.getElementById('sideMenu').classList.remove('active');
+    if (!isBack) pushHistory({ view: 'home' });
 };
 
-// [수정] 모든 사용자가 게시판에 진입할 수 있도록 alert 제거
-window.loadBoard = (name) => {
+window.loadBoard = (name, isBack = false) => {
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('postDetailView').style.display = 'none';
@@ -58,6 +75,7 @@ window.loadBoard = (name) => {
     document.getElementById('profileDisplay').src = setting.profile;
     document.getElementById('sideMenu').classList.remove('active');
     renderPosts(name);
+    if (!isBack) pushHistory({ view: 'board', boardName: name });
 };
 
 window.openPostModal = () => {
@@ -85,7 +103,6 @@ window.savePost = async () => {
     try {
         await push(ref(db, 'posts'), postData);
         window.closeModal('postModal');
-        // 글 작성 후 게시판 리스트 갱신
         renderPosts(board);
     } catch (e) {
         alert("글 등록 실패: " + e.message);
@@ -109,11 +126,9 @@ window.handleLogin = () => {
 window.handleLogout = () => { location.reload(); };
 window.showUserInfo = () => alert(`내 정보\n닉네임: ${window.currentUser.nickname}\n권한: ${window.currentUser.role}`);
 
-// [수정] 게시글 목록 렌더링 시 권한 체크
 function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     
-    // 신문고 게시판이고 접속자가 공장장이 아니면 "비공개 게시판" 안내 출력
     if (boardName === '신문고' && (!window.isLoggedIn || window.currentUser.role !== '공장장')) {
         listDiv.innerHTML = `
             <div style="padding:60px 20px; text-align:center; color:#888;">
@@ -149,7 +164,6 @@ window.openPostDetail = (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
     
-    // 상세보기 시에도 신문고 글이라면 공장장 계정인지 다시 확인
     if (post.board === '신문고' && (!window.isLoggedIn || window.currentUser.role !== '공장장')) {
         alert("이 글을 열람할 수 있는 권한이 없습니다.");
         return;
@@ -172,6 +186,9 @@ window.openPostDetail = (id) => {
     const canDelete = window.isLoggedIn && (post.authorId === window.currentUser.empId || window.currentUser.role === "관리자");
     document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
     renderComments(post.comments);
+
+    // 상세 보기 진입 시 히스토리 기록 (board 상태에서 한 단계 더 들어감)
+    pushHistory({ view: 'detail', postId: id, boardName: post.board });
 };
 
 window.handleLikeInDetail = async () => {
@@ -205,7 +222,15 @@ function renderComments(commentsObj) {
     `).join('');
 }
 
-window.closePostDetail = () => { window.currentViewingPostId = null; window.loadBoard(document.getElementById('currentBoardTitle').innerText); };
+window.closePostDetail = () => {
+    // 만약 히스토리 상 현재가 detail이라면 뒤로가기 실행
+    if (history.state && history.state.view === 'detail') {
+        history.back();
+    } else {
+        const boardName = document.getElementById('currentBoardTitle').innerText;
+        window.loadBoard(boardName, true);
+    }
+};
 
 window.deletePost = async () => {
     if (confirm("정말 삭제하시겠습니까?")) {
@@ -234,4 +259,11 @@ onValue(ref(db, 'posts'), (snapshot) => {
         }
     }
     if (document.getElementById('boardView').style.display === 'block') renderPosts(document.getElementById('currentBoardTitle').innerText);
+});
+
+// 초기 실행 시 홈 상태 기록
+window.addEventListener('load', () => {
+    if (!history.state) {
+        history.replaceState({ view: 'home' }, "");
+    }
 });
