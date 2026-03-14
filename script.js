@@ -15,13 +15,39 @@ const firebaseConfig = {
     databaseURL: "https://blind-cfc23-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
+// [상세 위치: Firebase 초기화 직후]
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-window.currentUser = null;
-window.isLoggedIn = false;
-window.allPosts = [];
-window.currentViewingPostId = null;
+// 전역 상태 초기화 보장
+window.currentUser = window.currentUser || null;
+window.isLoggedIn = window.isLoggedIn || false;
+window.allPosts = window.allPosts || [];
+window.currentViewingPostId = window.currentViewingPostId || null;
+
+// [함수 할당 방식 강화]
+// 모든 주요 함수가 선언됨과 동시에 window에 할당되어 HTML의 onclick이 즉시 인식하도록 합니다.
+const openModal = (id) => {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.style.display = 'block';
+    setTimeout(() => modal.classList.add('active'), 10);
+    history.pushState({ modalOpen: id }, ''); 
+};
+window.openModal = openModal;
+
+const closeModal = (id) => {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+        if (history.state && history.state.modalOpen === id) history.back();
+    }
+};
+window.closeModal = closeModal;
+
+// 나머지 handleLogin, loadBoard, goHome 등 모든 함수도 위와 동일하게 
+// const로 정의 후 window.함수명 = 함수명; 방식으로 명확히 할당하십시오.
 
 let loungeSettings = {
     '칭찬 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
