@@ -1,294 +1,85 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyDcrP_W-Kib7SZjWCwo319k_hCsA4pznmI",
-    authDomain: "blind-cfc23.firebaseapp.com",
-    projectId: "blind-cfc23",
-    storageBucket: "blind-cfc23.firebasestorage.app",
-    messagingSenderId: "886741832017",
-    appId: "1:886741832017:web:43056d5336da52e5348370",
-    measurementId: "G-4LX1Z4QGYK",
-    databaseURL: "https://blind-cfc23-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-window.currentUser = null;
-window.isLoggedIn = false;
-window.allPosts = [];
-window.currentViewingPostId = null;
-
-let loungeSettings = {
-    '칭찬 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '1공장 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '퀴즈': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '신문고': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
-};
-
-const getRandomAnon = () => `익명${Math.floor(Math.random() * 90 + 10)}`;
-
-window.openModal = (id) => {
-    const modal = document.getElementById(id);
-    if (!modal) return;
-    modal.style.display = 'block';
-    setTimeout(() => modal.classList.add('active'), 10);
-    history.pushState({ modalOpen: id }, ''); 
-};
-
-window.closeModal = (id) => {
-    const modal = document.getElementById(id);
-    if (modal && (modal.style.display === 'block' || modal.classList.contains('active'))) {
-        modal.style.display = 'none';
-        modal.classList.remove('active');
-        if (history.state && history.state.modalOpen === id) history.back();
-    }
-};
-
-window.closeModalByOutside = (event, id) => { if (event.target.id === id) window.closeModal(id); };
-
-document.addEventListener('click', (e) => {
-    const menu = document.getElementById('sideMenu');
-    const headerLeft = document.querySelector('.header-left');
-    if (menu && menu.classList.contains('active') && !menu.contains(e.target) && !headerLeft.contains(e.target)) {
-        menu.classList.remove('active');
-        if (history.state && history.state.menuOpen) history.back();
-    }
-});
-
-window.handleLogin = async () => {
-    const empId = document.getElementById('loginEmpId').value.trim();
-    const pw = document.getElementById('loginPw').value.trim();
-    if (!empId || !pw) { alert("사번과 비밀번호를 입력해주세요."); return; }
-    let userRole = "일반";
-    let nickname = "";
-    if (empId === "724" && pw === "724") {
-        userRole = "관리자"; nickname = "관리자";
-    } else if (empId === "1" && pw === "whalsdud") {
-        userRole = "공장장"; nickname = "공장장";
-    } else {
-        const userNum = empId.slice(-2).padStart(2, '0');
-        nickname = `익명${userNum}`;
-    }
-    successLogin({ empId, role: userRole, nickname });
-};
-
-function successLogin(user) {
-    window.currentUser = user;
-    window.isLoggedIn = true;
-    document.getElementById('loginIcons').style.display = 'none';
-    document.getElementById('userInfoIcon').style.display = 'flex';
-    document.getElementById('adminImgEditBtn').style.display = (user.role === "관리자") ? 'block' : 'none';
-    window.closeModal('loginModal');
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+.main-btn { background: #065d7a; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #ddd; background: #fff; position: sticky; top: 0; z-index: 100; }
+#userInfoIcon { display: flex; align-items: center; }
+#userInfoIcon i { cursor: pointer; font-size: 18px; color: #333; }
+/* 사이드 메뉴 본체 */
+.side-menu {
+    position: fixed;
+    top: 0;
+    left: -280px; /* 왼쪽으로 숨김 */
+    width: 280px;
+    height: 100%;
+    background: #fff;
+    z-index: 200;
+    transition: 0.3s;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
 
-window.handleLogout = () => {
-    window.currentUser = null;
-    window.isLoggedIn = false;
-    document.getElementById('loginIcons').style.display = 'inline';
-    document.getElementById('userInfoIcon').style.display = 'none';
-    window.goHome();
-};
-
-window.showUserInfo = () => {
-    alert(`내 정보\n닉네임: ${window.currentUser.nickname}\n권한: ${window.currentUser.role}`);
-};
-
-window.toggleMenu = () => {
-    const menu = document.getElementById('sideMenu');
-    if (menu.classList.toggle('active')) history.pushState({ menuOpen: true }, '');
-};
-
-window.goHome = () => {
-    document.getElementById('homeView').style.display = 'block';
-    document.getElementById('boardView').style.display = 'none';
-    document.getElementById('postDetailView').style.display = 'none';
-    document.getElementById('sideMenu').classList.remove('active');
-    if (!history.state || history.state.view !== 'home') {
-        history.replaceState({ view: 'home' }, '');
-    }
-};
-
-window.loadBoard = (name) => {
-    document.getElementById('homeView').style.display = 'none';
-    document.getElementById('boardView').style.display = 'block';
-    document.getElementById('postDetailView').style.display = 'none';
-    
-    document.getElementById('currentBoardTitle').innerText = name;
-    const setting = loungeSettings[name] || { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' };
-    document.getElementById('bgDisplay').src = setting.bg;
-    document.getElementById('profileDisplay').src = setting.profile;
-    
-    document.getElementById('sideMenu').classList.remove('active');
-    renderPosts(name);
-    history.pushState({ view: 'board', boardName: name }, '');
-};
-
-onValue(ref(db, 'posts'), (snapshot) => {
-    const data = snapshot.val();
-    window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-    window.allPosts.sort((a, b) => b.timestamp - a.timestamp); 
-
-    if (window.currentViewingPostId) {
-        const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
-        if (post) renderComments(post.comments); 
-    } else {
-        const boardView = document.getElementById('boardView');
-        if (boardView && boardView.style.display === 'block') {
-            const currentTitle = document.getElementById('currentBoardTitle').innerText;
-            renderPosts(currentTitle);
-        }
-    }
-});
-
-window.openPostModal = () => {
-    document.getElementById('postTitle').value = "";
-    document.getElementById('postContent').value = "";
-    window.openModal('postModal');
-};
-
-window.savePost = async () => {
-    const title = document.getElementById('postTitle').value.trim();
-    const content = document.getElementById('postContent').value.trim();
-    const board = document.getElementById('currentBoardTitle').innerText;
-
-    if (!title || !content) { alert("내용을 입력해주세요"); return; }
-
-    const authorNick = window.isLoggedIn ? window.currentUser.nickname : getRandomAnon();
-    const authorId = window.isLoggedIn ? window.currentUser.empId : "anonymous";
-
-    const postData = {
-        board, title, content,
-        author: authorNick,
-        authorId: authorId,
-        timestamp: Date.now(),
-        views: 0,
-        likedBy: {},
-        comments: {}
-    };
-
-    try {
-        await push(ref(db, 'posts'), postData);
-        window.closeModal('postModal');
-        renderPosts(board);
-    } catch (e) {
-        console.error(e);
-        alert("저장에 실패했습니다. Firebase 규칙을 확인하세요.");
-    }
-};
-
-function renderPosts(boardName) {
-    const listDiv = document.getElementById('postList');
-    const filtered = window.allPosts.filter(p => p.board === boardName);
-    
-    let deviceId = localStorage.getItem('h1_device_id') || 'anon_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('h1_device_id', deviceId);
-    const myId = window.isLoggedIn ? window.currentUser.empId : deviceId;
-
-    if(filtered.length === 0) {
-        listDiv.innerHTML = '<p style="padding:20px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
-        return;
-    }
-
-    listDiv.innerHTML = filtered.map(p => {
-        const isLiked = p.likedBy && p.likedBy[myId];
-        return `
-            <div class="post-item" onclick="openPostDetail('${p.id}')">
-                <div class="post-user-info">
-                    <span class="nickname">${p.author}</span>
-                    <span class="post-date">${timeSince(p.timestamp)}</span>
-                </div>
-                <h4 class="post-title">${p.title}</h4>
-                <div class="post-stats">
-                    <span onclick="event.stopPropagation(); window.toggleLike('${p.id}')">
-                        <i class="${isLiked ? 'fas fa-heart liked' : 'far fa-heart'}"></i> 
-                        <small>${p.likedBy ? Object.keys(p.likedBy).length : 0}</small>
-                    </span>
-                    <span><i class="far fa-comment"></i> <small>${p.comments ? Object.keys(p.comments).length : 0}</small></span>
-                </div>
-            </div>`;
-    }).join('');
+/* 메뉴 활성화 상태 */
+.side-menu.active {
+    left: 0;
 }
 
-window.openPostDetail = (id) => {
-    const post = window.allPosts.find(p => p.id === id);
-    if(!post) return;
-    if (post.board === "신문고" && !(window.isLoggedIn && ["관리자", "공장장"].includes(window.currentUser.role))) {
-        alert("권한이 없습니다."); return;
-    }
-    window.currentViewingPostId = id;
-    document.getElementById('boardView').style.display = 'none';
-    document.getElementById('postDetailView').style.display = 'block';
-    document.getElementById('dtNickname').innerText = post.author;
-    document.getElementById('dtTime').innerText = timeSince(post.timestamp);
-    document.getElementById('dtTitle').innerText = post.title;
-    document.getElementById('dtContent').innerText = post.content;
-    updateDetailStats(post);
-    renderComments(post.comments);
-    history.pushState({ view: 'detail', postId: id }, '');
-};
-
-window.closePostDetail = () => {
-    window.currentViewingPostId = null;
-    history.back();
-};
-
-function renderComments(commentsObj) {
-    const list = document.getElementById('dtCommentList');
-    const comments = commentsObj ? Object.values(commentsObj) : [];
-    document.getElementById('dtCommentCount').innerText = comments.length;
-    list.innerHTML = comments.map(c => `<div class="dt-comment-item"><b>${c.author}</b>: ${c.text}</div>`).join('');
+/* 게시판 목록 아이템 (li) */
+.side-menu li { 
+    padding: 12px 20px; 
+    border-bottom: 1px solid #eee; 
+    cursor: pointer; 
+    list-style: none;
+    font-size: 14px; 
+    color: #333;
+    font-weight: normal;
 }
 
-window.submitComment = async () => {
-    const input = document.getElementById('dtCommentInput');
-    const text = input.value.trim();
-    if (!text || !window.currentViewingPostId) return;
-    const authorNick = window.isLoggedIn ? window.currentUser.nickname : getRandomAnon();
-    await push(ref(db, `posts/${window.currentViewingPostId}/comments`), { author: authorNick, text: text, timestamp: Date.now() });
-    input.value = "";
-};
+.side-menu li:active { background: #f5f5f5; }
 
-window.toggleLike = async (id) => {
-    const post = window.allPosts.find(p => p.id === id);
-    if (!post) return;
-    const myId = window.isLoggedIn ? window.currentUser.empId : localStorage.getItem('h1_device_id');
-    const likedBy = post.likedBy || {};
-    likedBy[myId] ? delete likedBy[myId] : likedBy[myId] = true;
-    await set(ref(db, `posts/${id}/likedBy`), likedBy);
-};
-
-window.handleLikeInDetail = () => window.toggleLike(window.currentViewingPostId);
-
-function updateDetailStats(post) {
-    const likedBy = post.likedBy || {};
-    const myId = window.isLoggedIn ? window.currentUser.empId : localStorage.getItem('h1_device_id');
-    const isLiked = likedBy[myId];
-    const icon = document.getElementById('dtLikeIcon');
-    icon.className = isLiked ? 'fas fa-heart liked' : 'far fa-heart';
-    document.getElementById('dtLikeCount').innerText = Object.keys(likedBy).length;
+.side-menu h3 {
+    padding: 20px;
+    font-size: 18px;
+    border-bottom: 2px solid #065d7a;
+    color: #065d7a;
+    font-weight: bold;
 }
-
-function timeSince(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    if (seconds < 60) return "방금 전";
-    if (seconds < 3600) return Math.floor(seconds / 60) + "분 전";
-    return Math.floor(seconds / 86400) + "일 전";
-}
-
-window.onpopstate = (event) => {
-    const state = event.state;
-    if (state && state.view === 'board') {
-        document.getElementById('homeView').style.display = 'none';
-        document.getElementById('boardView').style.display = 'block';
-        document.getElementById('postDetailView').style.display = 'none';
-        renderPosts(state.boardName);
-    } else if (state && state.view === 'detail') {
-        window.openPostDetail(state.postId);
-    } else {
-        window.goHome();
-    }
-};
-
-window.onload = () => history.replaceState({ view: 'home' }, '');
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+.modal.active { display: block; }
+.modal-content { background: white; margin: 15vh auto; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; position: relative; z-index: 1001; }
+.modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+.close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #888; }
+.upload-group { margin-bottom: 15px; }
+.upload-group label { font-size: 13px; color: #666; display: block; margin-bottom: 5px; }
+.post-item { padding: 15px; border-bottom: 1px solid #f0f0f0; background: #fff; cursor: pointer; }
+.post-user-info { display: flex; align-items: center; margin-bottom: 8px; gap: 10px; }
+.nickname { font-weight: bold; font-size: 14px; color: #333; }
+.post-date { color: #aaa; font-size: 12px; }
+.post-title { font-size: 16px; margin-bottom: 5px; color: #222; }
+.post-summary { font-size: 14px; color: #666; line-height: 1.4; margin-bottom: 10px; }
+.post-stats { display: flex; gap: 15px; color: #888; font-size: 14px; }
+.fa-heart.liked { color: #ff0000 !important; }
+.board-visual-area { position: relative; width: 100%; margin-bottom: 40px; }
+.rect-banner { width: 100%; height: 160px; overflow: hidden; background: #eee; }
+.rect-banner img { width: 100%; height: 100%; object-fit: cover; }
+.circle-profile { position: absolute; bottom: -35px; left: 20px; width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; overflow: hidden; background: #fff; z-index: 10; }
+.circle-profile img { width: 100%; height: 100%; object-fit: cover; }
+.admin-edit-btn { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,0.5); color: #fff; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; z-index: 15; }
+.board-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; }
+#postDetailView { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 500; overflow-y: auto; }
+.detail-top-nav { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f1f1; position: sticky; top: 0; background: #fff; }
+.detail-back { font-size: 20px; margin-right: 15px; cursor: pointer; }
+.detail-logo-text { font-weight: bold; font-size: 18px; color: #333; }
+.detail-header-info { padding: 20px; }
+.dt-nick { font-weight: bold; font-size: 15px; color: #333; }
+.dt-time { color: rgba(170, 170, 170, 0.7); font-size: 12px; }
+.dt-title { font-size: 22px; margin-bottom: 15px; line-height: 1.3; color: #111; }
+.dt-content { font-size: 16px; line-height: 1.6; color: #333; white-space: pre-wrap; margin-bottom: 20px; }
+.detail-action-bar { padding: 15px 20px; display: flex; gap: 20px; border-top: 1px solid #f1f1f1; color: #666; align-items: center; }
+.stat-item { display: flex; align-items: center; gap: 6px; }
+.stat-item i { font-size: 18px; }
+.stat-item small { font-size: 15px; line-height: 1; }
+.detail-divider { height: 8px; background: #f5f5f5; }
+.dt-comment-item { padding: 15px 20px; border-bottom: 1px solid #f9f9f9; }
+.dt-comment-nick { font-weight: bold; font-size: 13px; margin-bottom: 5px; }
+.dt-input-area { position: fixed; bottom: 0; left: 0; width: 100%; padding: 12px 15px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; }
+.dt-input-area input { flex: 1; padding: 12px; border: 1px solid #eee; border-radius: 25px; background: #f8f8f8; font-size: 15px; outline: none; }
+.dt-input-area button { background: none; border: none; color: #065d7a; font-weight: bold; font-size: 15px; cursor: pointer; }
