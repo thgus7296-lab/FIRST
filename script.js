@@ -83,18 +83,20 @@ window.savePost = async () => {
         author: window.isLoggedIn ? window.currentUser.nickname : `익명${Math.floor(Math.random() * 90 + 10)}`,
         authorId: window.isLoggedIn ? window.currentUser.empId : "anonymous",
         timestamp: Date.now(),
-        views: 0,
-        likedBy: {},
-        comments: {}
+        views: 0
+        // 파이어베이스는 빈 객체({})를 거부하므로 likedBy, comments 초기화 부분은 삭제했습니다.
     };
 
     try {
         const postRef = ref(db, 'posts');
         await push(postRef, postData);
         window.closeModal('postModal');
+        // 등록 직후 게시판을 새로고침하여 즉각 반영되도록 추가
+        window.loadBoard(board);
     } catch (e) {
         console.error("데이터 저장 에러:", e);
-        alert("글 등록에 실패했습니다. 다시 시도해주세요.");
+        // 에러 원인을 파악할 수 있도록 메시지 상세화
+        alert(`글 등록 실패!\n원인: ${e.message}\n파이어베이스 Realtime Database 규칙(Rules)이 읽기/쓰기 허용(true)인지 확인해주세요.`);
     }
 };
 
