@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, update, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDcrP_W-Kib7SZjWCwo319k_hCsA4pznmI",
@@ -29,12 +29,12 @@ const loungeSettings = {
 
 window.openModal = (id) => {
     const modal = document.getElementById(id);
-    if (modal) { modal.style.display = 'block'; modal.classList.add('active'); }
+    if (modal) { modal.style.display = 'block'; setTimeout(() => modal.classList.add('active'), 10); }
 };
 
 window.closeModal = (id) => {
     const modal = document.getElementById(id);
-    if (modal) { modal.style.display = 'none'; modal.classList.remove('active'); }
+    if (modal) { modal.classList.remove('active'); setTimeout(() => modal.style.display = 'none', 300); }
 };
 
 window.closeModalByOutside = (e, id) => { if (e.target.id === id) window.closeModal(id); };
@@ -69,8 +69,7 @@ window.savePost = async () => {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
-
-    if (!title || !content) { alert("제목과 내용을 모두 입력해주세요."); return; }
+    if (!title || !content) return alert("제목과 내용을 모두 입력해주세요.");
 
     const postData = {
         board: board,
@@ -104,14 +103,14 @@ window.handleLogin = () => {
     window.closeModal('loginModal');
 };
 
-window.handleLogout = () => { window.isLoggedIn = false; window.currentUser = null; location.reload(); };
+window.handleLogout = () => { location.reload(); };
 window.showUserInfo = () => alert(`내 정보\n닉네임: ${window.currentUser.nickname}\n권한: ${window.currentUser.role}`);
 
 function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     const filtered = window.allPosts.filter(p => p.board === boardName);
     if (filtered.length === 0) {
-        listDiv.innerHTML = '<p style="padding:20px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
+        listDiv.innerHTML = '<p style="padding:40px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
         return;
     }
     listDiv.innerHTML = filtered.map(p => `
@@ -121,7 +120,7 @@ function renderPosts(boardName) {
                 <span class="post-date">${timeSince(p.timestamp)}</span>
             </div>
             <h4 class="post-title">${p.title}</h4>
-            <p class="post-summary">${p.content.substring(0, 30)}...</p>
+            <p class="post-summary">${p.content.substring(0, 50)}...</p>
             <div class="post-stats">
                 <span><i class="far fa-heart"></i> ${p.likedBy ? Object.keys(p.likedBy).length : 0}</span>
                 <span><i class="far fa-comment"></i> ${p.comments ? Object.keys(p.comments).length : 0}</span>
@@ -136,52 +135,37 @@ window.openPostDetail = (id) => {
     if (!post) return;
     window.currentViewingPostId = id;
     update(ref(db, `posts/${id}`), { views: (post.views || 0) + 1 });
-    
     document.getElementById('boardView').style.display = 'none';
-    document.getElementById('postDetailView').style.display = 'block';
+    document.getElementById('postDetailView').style.display = 'flex';
     document.getElementById('dtNickname').innerText = post.author;
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
-    
     const likeCount = post.likedBy ? Object.keys(post.likedBy).length : 0;
     document.getElementById('dtLikeCount').innerText = likeCount;
-    
     const isLiked = window.isLoggedIn && post.likedBy && post.likedBy[window.currentUser.empId];
     const likeIcon = document.getElementById('dtLikeIcon');
     likeIcon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
     likeIcon.style.color = isLiked ? '#ff4d4d' : '#888';
-
     const canDelete = window.isLoggedIn && (post.authorId === window.currentUser.empId || window.currentUser.role === "관리자");
     document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
-    
     renderComments(post.comments);
 };
 
 window.handleLikeInDetail = async () => {
     if (!window.isLoggedIn) return alert("로그인이 필요합니다.");
-    if (!window.currentViewingPostId) return;
-
     const postRef = ref(db, `posts/${window.currentViewingPostId}/likedBy/${window.currentUser.empId}`);
-    
-    // 간단한 토글 로직
     const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
-    const alreadyLiked = post.likedBy && post.likedBy[window.currentUser.empId];
-
-    if (alreadyLiked) {
-        await remove(postRef);
-    } else {
-        await set(postRef, true);
-    }
+    if (post.likedBy && post.likedBy[window.currentUser.empId]) await remove(postRef);
+    else await set(postRef, true);
 };
 
 window.submitComment = async () => {
     const input = document.getElementById('dtCommentInput');
-    const text = input.value.trim();
-    if (!text || !window.currentViewingPostId) return;
+    if (!input.value.trim()) return;
     await push(ref(db, `posts/${window.currentViewingPostId}/comments`), {
         author: window.isLoggedIn ? window.currentUser.nickname : `익명${Math.floor(Math.random() * 90 + 10)}`,
-        text: text,
+        text: input.value.trim(),
         timestamp: Date.now()
     });
     input.value = "";
@@ -221,13 +205,11 @@ onValue(ref(db, 'posts'), (snapshot) => {
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp);
     if (window.currentViewingPostId) {
-        const updatedPost = window.allPosts.find(p => p.id === window.currentViewingPostId);
-        if (updatedPost) {
-            document.getElementById('dtLikeCount').innerText = updatedPost.likedBy ? Object.keys(updatedPost.likedBy).length : 0;
-            renderComments(updatedPost.comments);
+        const p = window.allPosts.find(x => x.id === window.currentViewingPostId);
+        if (p) {
+            document.getElementById('dtLikeCount').innerText = p.likedBy ? Object.keys(p.likedBy).length : 0;
+            renderComments(p.comments);
         }
     }
-    if (document.getElementById('boardView').style.display === 'block') {
-        renderPosts(document.getElementById('currentBoardTitle').innerText);
-    }
+    if (document.getElementById('boardView').style.display === 'block') renderPosts(document.getElementById('currentBoardTitle').innerText);
 });
