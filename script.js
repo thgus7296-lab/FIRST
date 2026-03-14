@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, set, push, onValue, update, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDcrP_W-Kib7SZjWCwo319k_hCsA4pznmI",
@@ -27,7 +27,6 @@ const loungeSettings = {
     '퀴즈': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
-// --- 전역 함수 할당 ---
 window.openModal = (id) => {
     const modal = document.getElementById(id);
     if (modal) { modal.style.display = 'block'; modal.classList.add('active'); }
@@ -39,7 +38,6 @@ window.closeModal = (id) => {
 };
 
 window.closeModalByOutside = (e, id) => { if (e.target.id === id) window.closeModal(id); };
-
 window.toggleMenu = () => document.getElementById('sideMenu').classList.toggle('active');
 
 window.goHome = () => {
@@ -54,7 +52,6 @@ window.loadBoard = (name) => {
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('postDetailView').style.display = 'none';
     document.getElementById('currentBoardTitle').innerText = name;
-    
     const setting = loungeSettings[name] || loungeSettings['칭찬 라운지'];
     document.getElementById('bgDisplay').src = setting.bg;
     document.getElementById('profileDisplay').src = setting.profile;
@@ -62,7 +59,6 @@ window.loadBoard = (name) => {
     renderPosts(name);
 };
 
-// --- 글쓰기 기능 원복 및 강화 ---
 window.openPostModal = () => {
     document.getElementById('postTitle').value = "";
     document.getElementById('postContent').value = "";
@@ -84,32 +80,23 @@ window.savePost = async () => {
         authorId: window.isLoggedIn ? window.currentUser.empId : "anonymous",
         timestamp: Date.now(),
         views: 0
-        // 파이어베이스는 빈 객체({})를 거부하므로 likedBy, comments 초기화 부분은 삭제했습니다.
     };
 
     try {
-        const postRef = ref(db, 'posts');
-        await push(postRef, postData);
+        await push(ref(db, 'posts'), postData);
         window.closeModal('postModal');
-        // 등록 직후 게시판을 새로고침하여 즉각 반영되도록 추가
-        window.loadBoard(board);
     } catch (e) {
-        console.error("데이터 저장 에러:", e);
-        // 에러 원인을 파악할 수 있도록 메시지 상세화
-        alert(`글 등록 실패!\n원인: ${e.message}\n파이어베이스 Realtime Database 규칙(Rules)이 읽기/쓰기 허용(true)인지 확인해주세요.`);
+        alert("글 등록 실패: " + e.message);
     }
 };
 
-// --- 로그인 ---
 window.handleLogin = () => {
     const empId = document.getElementById('loginEmpId').value.trim();
     const pw = document.getElementById('loginPw').value.trim();
     if (!empId || !pw) return alert("사번과 비밀번호를 입력하세요.");
-    
     let role = "일반", nickname = `익명${empId.slice(-2)}`;
     if (empId === "724" && pw === "724") { role = "관리자"; nickname = "관리자"; }
     else if (empId === "1" && pw === "whalsdud") { role = "공장장"; nickname = "공장장"; }
-    
     window.currentUser = { empId, role, nickname };
     window.isLoggedIn = true;
     document.getElementById('loginIcons').style.display = 'none';
@@ -120,16 +107,13 @@ window.handleLogin = () => {
 window.handleLogout = () => { window.isLoggedIn = false; window.currentUser = null; location.reload(); };
 window.showUserInfo = () => alert(`내 정보\n닉네임: ${window.currentUser.nickname}\n권한: ${window.currentUser.role}`);
 
-// --- 게시글 목록 렌더링 ---
 function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     const filtered = window.allPosts.filter(p => p.board === boardName);
-    
     if (filtered.length === 0) {
         listDiv.innerHTML = '<p style="padding:20px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
         return;
     }
-
     listDiv.innerHTML = filtered.map(p => `
         <div class="post-item" onclick="openPostDetail('${p.id}')">
             <div class="post-user-info">
@@ -137,7 +121,7 @@ function renderPosts(boardName) {
                 <span class="post-date">${timeSince(p.timestamp)}</span>
             </div>
             <h4 class="post-title">${p.title}</h4>
-            <p class="post-summary">${p.content.substring(0, 30)}${p.content.length > 30 ? '...' : ''}</p>
+            <p class="post-summary">${p.content.substring(0, 30)}...</p>
             <div class="post-stats">
                 <span><i class="far fa-heart"></i> ${p.likedBy ? Object.keys(p.likedBy).length : 0}</span>
                 <span><i class="far fa-comment"></i> ${p.comments ? Object.keys(p.comments).length : 0}</span>
@@ -150,8 +134,6 @@ function renderPosts(boardName) {
 window.openPostDetail = (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
-    if (post.board === "신문고" && !(window.isLoggedIn && ["관리자", "공장장"].includes(window.currentUser.role))) return alert("권한이 없습니다.");
-
     window.currentViewingPostId = id;
     update(ref(db, `posts/${id}`), { views: (post.views || 0) + 1 });
     
@@ -162,18 +144,34 @@ window.openPostDetail = (id) => {
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
     
+    const likeCount = post.likedBy ? Object.keys(post.likedBy).length : 0;
+    document.getElementById('dtLikeCount').innerText = likeCount;
+    
+    const isLiked = window.isLoggedIn && post.likedBy && post.likedBy[window.currentUser.empId];
+    const likeIcon = document.getElementById('dtLikeIcon');
+    likeIcon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
+    likeIcon.style.color = isLiked ? '#ff4d4d' : '#888';
+
     const canDelete = window.isLoggedIn && (post.authorId === window.currentUser.empId || window.currentUser.role === "관리자");
     document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
     
     renderComments(post.comments);
 };
 
-window.closePostDetail = () => { window.currentViewingPostId = null; window.loadBoard(document.getElementById('currentBoardTitle').innerText); };
+window.handleLikeInDetail = async () => {
+    if (!window.isLoggedIn) return alert("로그인이 필요합니다.");
+    if (!window.currentViewingPostId) return;
 
-window.deletePost = async () => {
-    if (confirm("정말 삭제하시겠습니까?")) {
-        await remove(ref(db, `posts/${window.currentViewingPostId}`));
-        window.closePostDetail();
+    const postRef = ref(db, `posts/${window.currentViewingPostId}/likedBy/${window.currentUser.empId}`);
+    
+    // 간단한 토글 로직
+    const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
+    const alreadyLiked = post.likedBy && post.likedBy[window.currentUser.empId];
+
+    if (alreadyLiked) {
+        await remove(postRef);
+    } else {
+        await set(postRef, true);
     }
 };
 
@@ -201,6 +199,15 @@ function renderComments(commentsObj) {
     `).join('');
 }
 
+window.closePostDetail = () => { window.currentViewingPostId = null; window.loadBoard(document.getElementById('currentBoardTitle').innerText); };
+
+window.deletePost = async () => {
+    if (confirm("정말 삭제하시겠습니까?")) {
+        await remove(ref(db, `posts/${window.currentViewingPostId}`));
+        window.closePostDetail();
+    }
+};
+
 function timeSince(date) {
     const seconds = Math.floor((new Date() - date) / 1000);
     if (seconds < 60) return "방금 전";
@@ -209,11 +216,17 @@ function timeSince(date) {
     return Math.floor(seconds / 86400) + "일 전";
 }
 
-// 실시간 데이터 감시
 onValue(ref(db, 'posts'), (snapshot) => {
     const data = snapshot.val();
     window.allPosts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
     window.allPosts.sort((a, b) => b.timestamp - a.timestamp);
+    if (window.currentViewingPostId) {
+        const updatedPost = window.allPosts.find(p => p.id === window.currentViewingPostId);
+        if (updatedPost) {
+            document.getElementById('dtLikeCount').innerText = updatedPost.likedBy ? Object.keys(updatedPost.likedBy).length : 0;
+            renderComments(updatedPost.comments);
+        }
+    }
     if (document.getElementById('boardView').style.display === 'block') {
         renderPosts(document.getElementById('currentBoardTitle').innerText);
     }
