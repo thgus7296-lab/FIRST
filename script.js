@@ -170,9 +170,12 @@ window.openPostModal = () => {
 window.savePost = async () => {
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
-    const board = document.getElementById('currentBoardTitle').innerText;
+    const boardEl = document.getElementById('currentBoardTitle');
+    const board = boardEl ? boardEl.innerText : "";
 
+    // 1. 필수 값 체크 강화
     if (!title || !content) { alert("내용을 입력해주세요"); return; }
+    if (!board || board === "게시판 이름") { alert("게시판 정보가 올바르지 않습니다."); return; }
 
     const authorNick = window.isLoggedIn ? window.currentUser.nickname : getRandomAnon();
     const authorId = window.isLoggedIn ? window.currentUser.empId : "anonymous";
@@ -187,6 +190,17 @@ window.savePost = async () => {
         comments: {}
     };
 
+    try {
+        // 2. Firebase 저장 시도
+        await push(ref(db, 'posts'), postData);
+        window.closeModal('postModal');
+        renderPosts(board);
+    } catch (e) {
+        // 3. 에러 발생 시 콘솔에 상세 원인 출력 (F12 개발자 도구에서 확인 가능)
+        console.error("Firebase 저장 에러 원인:", e);
+        alert("저장에 실패했습니다. Firebase Database의 Rules(규칙) 설정을 확인해주세요.");
+    }
+};
     try {
         await push(ref(db, 'posts'), postData);
         window.closeModal('postModal');
