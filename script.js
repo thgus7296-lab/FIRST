@@ -25,21 +25,20 @@ if (!localStorage.getItem('anonymousId')) {
 }
 const getVisitorId = () => window.isLoggedIn ? window.currentUser.empId : localStorage.getItem('anonymousId');
 
+// [수정] 게시판별 문구 설정 (프로필은 요청에 따라 사용하지 않음)
 const loungeSettings = {
-    '칭찬 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '1공장 라운지': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '신문고': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' },
-    '퀴즈': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
+    '칭찬 라운지': { text: '칭찬하고 싶은 구성원을 칭찬해 주세요!', color: '#ff9a9e' },
+    '1공장 라운지': { text: '모든 주제에 대해 자유롭게 익명으로 말해주세요!', color: '#a1c4fd' },
+    '신문고': { text: '공장장님께 건의사항이 있으면 말씀해주세요! 완벽한 익명입니다!', color: '#4facfe' },
+    '퀴즈': { text: '이번 퀴즈의 행운의 당첨자가 되어보세요!', color: '#f093fb' }
 };
 
-// [수정] 뒤로가기 시 메뉴가 열려있으면 메뉴만 닫음
 window.onpopstate = (event) => {
     const sideMenu = document.getElementById('sideMenu');
     if (sideMenu.classList.contains('active')) {
-        closeMenuInternal(); // 메뉴 닫기
+        closeMenuInternal();
         return;
     }
-
     const state = event.state;
     if (!state || state.view === 'home') {
         window.goHome(true);
@@ -66,23 +65,19 @@ window.closeModal = (id) => {
 
 window.closeModalByOutside = (e, id) => { if (e.target.id === id) window.closeModal(id); };
 
-// [수정] 메뉴 열 때 히스토리 추가, 닫을 때 히스토리 백
 window.toggleMenu = () => {
     const sideMenu = document.getElementById('sideMenu');
     const overlay = document.getElementById('menuOverlay');
     const isActive = sideMenu.classList.contains('active');
-
     if (!isActive) {
         sideMenu.classList.add('active');
         overlay.classList.add('active');
-        // 메뉴가 열렸다는 가짜 상태를 추가하여 '뒤로가기'를 가로챔
         history.pushState({ menu: 'open' }, "");
     } else {
-        history.back(); // 뒤로가기를 실행하여 onpopstate에서 닫히게 함
+        history.back();
     }
 };
 
-// 내부적으로 메뉴만 닫는 함수
 function closeMenuInternal() {
     document.getElementById('sideMenu').classList.remove('active');
     document.getElementById('menuOverlay').classList.remove('active');
@@ -101,9 +96,13 @@ window.loadBoard = (name, isBack = false) => {
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('postDetailView').style.display = 'none';
     document.getElementById('currentBoardTitle').innerText = name;
-    const setting = loungeSettings[name] || loungeSettings['칭찬 라운지'];
-    document.getElementById('bgDisplay').src = setting.bg;
-    document.getElementById('profileDisplay').src = setting.profile;
+    
+    // [수정] 배경 문구 및 프로필 삭제 로직
+    const setting = loungeSettings[name] || { text: '함께 소통하는 공간입니다.', color: '#065d7a' };
+    document.getElementById('bgText').innerText = setting.text;
+    document.getElementById('bgBanner').style.background = setting.color; // 게시판별 포인트 컬러
+    document.getElementById('profileArea').style.display = 'none'; // 프로필 삭제 요청 반영
+
     closeMenuInternal();
     renderPosts(name);
     if (!isBack) pushHistory({ view: 'board', boardName: name });
@@ -120,7 +119,6 @@ window.savePost = async () => {
     const content = document.getElementById('postContent').value.trim();
     const board = document.getElementById('currentBoardTitle').innerText;
     if (!title || !content) return alert("제목과 내용을 모두 입력해주세요.");
-
     const postData = {
         board: board,
         title: title,
@@ -130,7 +128,6 @@ window.savePost = async () => {
         timestamp: Date.now(),
         views: 0
     };
-
     try {
         await push(ref(db, 'posts'), postData);
         window.closeModal('postModal');
@@ -159,7 +156,6 @@ window.showUserInfo = () => alert(`내 정보\n닉네임: ${window.currentUser.n
 
 function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
-    
     if (boardName === '신문고' && (!window.isLoggedIn || window.currentUser.role !== '공장장')) {
         listDiv.innerHTML = `
             <div style="padding:60px 20px; text-align:center; color:#888;">
@@ -168,7 +164,6 @@ function renderPosts(boardName) {
             </div>`;
         return;
     }
-
     const filtered = window.allPosts.filter(p => p.board === boardName);
     if (filtered.length === 0) {
         listDiv.innerHTML = '<p style="padding:40px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
@@ -194,12 +189,10 @@ function renderPosts(boardName) {
 window.openPostDetail = (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
-    
     if (post.board === '신문고' && (!window.isLoggedIn || window.currentUser.role !== '공장장')) {
         alert("이 글을 열람할 수 있는 권한이 없습니다.");
         return;
     }
-
     window.currentViewingPostId = id;
     update(ref(db, `posts/${id}`), { views: (post.views || 0) + 1 });
     document.getElementById('boardView').style.display = 'none';
@@ -208,7 +201,6 @@ window.openPostDetail = (id) => {
     document.getElementById('dtTime').innerText = timeSince(post.timestamp);
     document.getElementById('dtTitle').innerText = post.title;
     document.getElementById('dtContent').innerText = post.content;
-    
     const visitorId = getVisitorId();
     const likeCount = post.likedBy ? Object.keys(post.likedBy).length : 0;
     document.getElementById('dtLikeCount').innerText = likeCount;
@@ -216,11 +208,9 @@ window.openPostDetail = (id) => {
     const likeIcon = document.getElementById('dtLikeIcon');
     likeIcon.className = isLiked ? 'fas fa-heart' : 'far fa-heart';
     likeIcon.style.color = isLiked ? '#ff4d4d' : '#888';
-    
     const canDelete = window.isLoggedIn && (post.authorId === window.currentUser.empId || window.currentUser.role === "관리자");
     document.getElementById('deletePostBtn').style.display = canDelete ? 'block' : 'none';
     renderComments(post.comments);
-
     pushHistory({ view: 'detail', postId: id, boardName: post.board });
 };
 
@@ -228,7 +218,6 @@ window.handleLikeInDetail = async () => {
     const visitorId = getVisitorId(); 
     const postRef = ref(db, `posts/${window.currentViewingPostId}/likedBy/${visitorId}`);
     const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
-    
     if (post.likedBy && post.likedBy[visitorId]) {
         await remove(postRef);
     } else {
