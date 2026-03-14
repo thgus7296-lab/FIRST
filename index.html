@@ -91,10 +91,12 @@
     <div id="loginModal" class="modal" onclick="closeModalByOutside(event, 'loginModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h2>로그인</h2>
-            <input type="text" id="loginEmpId" placeholder="사번">
-            <input type="password" id="loginPw" placeholder="비밀번호">
-            <div style="display:flex; justify-content:space-between; margin-top:15px;">
-                <button class="main-btn" style="background:#888;" onclick="closeModal('loginModal')">취소</button>
+            <div class="input-group">
+                <input type="text" id="loginEmpId" placeholder="사번">
+                <input type="password" id="loginPw" placeholder="비밀번호">
+            </div>
+            <div class="modal-buttons">
+                <button class="sub-btn" onclick="closeModal('loginModal')">취소</button>
                 <button class="main-btn" onclick="handleLogin()">로그인</button>
             </div>
         </div>
@@ -102,11 +104,13 @@
 
     <div id="postModal" class="modal" onclick="closeModalByOutside(event, 'postModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close" onclick="closeModal('postModal')">&times;</span>
-            <h2>새 글 작성</h2>
+            <div class="modal-header">
+                <h2>새 글 작성</h2>
+                <span class="close" onclick="closeModal('postModal')">&times;</span>
+            </div>
             <input type="text" id="postTitle" placeholder="제목을 입력하세요">
             <textarea id="postContent" placeholder="내용을 입력하세요" rows="8"></textarea>
-            <button class="main-btn" style="width:100%;" onclick="savePost()">등록하기</button>
+            <button class="main-btn full-btn" onclick="savePost()">등록하기</button>
         </div>
     </div>
 
