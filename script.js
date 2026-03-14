@@ -262,11 +262,11 @@ window.openPostDetail = (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if(!post) return;
 
-    // 신문고 권한 강화: 관리자/공장장이 아니면 비로그인/일반인 모두 차단
+    // 신문고 권한 강화: 공장장이 아니면 비로그인/일반인 모두 차단
     if (post.board === "신문고") {
         const isAuth = window.isLoggedIn && ["관리자", "공장장"].includes(window.currentUser.role);
         if (!isAuth) {
-            alert("신문고 게시글 열람은 공장장 및 관리자만 가능합니다.");
+            alert("신문고 게시글 열람은 공장장만 가능합니다.");
             return;
         }
     }
