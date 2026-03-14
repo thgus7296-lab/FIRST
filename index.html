@@ -38,15 +38,21 @@
 
     <main id="mainContent">
         <div id="homeView">
-            <div class="image-placeholder" style="height:100px; background:#065d7a; color:#fff; display:flex; justify-content:center; align-items:center;">상단 배너 영역</div>
-            <div style="height:60px;"></div>
-            <div class="image-placeholder" style="height:300px; background:#eee; display:flex; justify-content:center; align-items:center;">메인 콘텐츠 영역</div>
+            <div class="image-placeholder main-banner">화성1공장 익명의 소리</div>
+            <div style="height:30px;"></div>
+            <div class="image-placeholder main-intro">
+                <p>익명으로 소통할 수 있는 화성1공장의 게시판입니다.</p>
+                <p>다양한 게시판이 있으니 목적에 맞게 활용해주세요!</p>
+                <p>문의 사항은 LSB에게 문의 바랍니다!</p>
+            </div>
         </div>
 
         <div id="boardView" style="display: none;">
             <div class="board-visual-area">
-                <div class="rect-banner"><img id="bgDisplay" src="https://via.placeholder.com/800x200" alt="배경"></div>
-                <div class="circle-profile"><img id="profileDisplay" src="https://via.placeholder.com/100x100" alt="프로필"></div>
+                <div class="rect-banner" id="bgBanner">
+                    <span id="bgText">게시판 안내 문구</span>
+                </div>
+                <div class="circle-profile" id="profileArea" style="display: none;"><img id="profileDisplay" src="" alt="프로필"></div>
             </div>
             <div class="board-header">
                 <h2 id="currentBoardTitle">게시판 이름</h2>
