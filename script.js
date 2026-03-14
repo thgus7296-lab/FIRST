@@ -47,7 +47,16 @@ window.goHome = () => {
     document.getElementById('sideMenu').classList.remove('active');
 };
 
+// [수정 위치 1] 게시판 로드 시 권한 체크
 window.loadBoard = (name) => {
+    if (name === '신문고') {
+        if (!window.isLoggedIn || window.currentUser.role !== '공장장') {
+            alert("신문고는 공장장만 열람할 수 있는 비공개 공간입니다.");
+            document.getElementById('sideMenu').classList.remove('active');
+            return;
+        }
+    }
+    
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('postDetailView').style.display = 'none';
@@ -106,8 +115,16 @@ window.handleLogin = () => {
 window.handleLogout = () => { location.reload(); };
 window.showUserInfo = () => alert(`내 정보\n닉네임: ${window.currentUser.nickname}\n권한: ${window.currentUser.role}`);
 
+// [수정 위치 2] 렌더링 시 이중 보안 필터링
 function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
+    
+    // 신문고 게시판일 때 공장장이 아니면 리스트를 비워버림
+    if (boardName === '신문고' && (!window.isLoggedIn || window.currentUser.role !== '공장장')) {
+        listDiv.innerHTML = '<p style="padding:40px; text-align:center; color:#888;">권한이 없습니다.</p>';
+        return;
+    }
+
     const filtered = window.allPosts.filter(p => p.board === boardName);
     if (filtered.length === 0) {
         listDiv.innerHTML = '<p style="padding:40px; text-align:center; color:#888;">작성된 글이 없습니다.</p>';
@@ -133,6 +150,13 @@ function renderPosts(boardName) {
 window.openPostDetail = (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
+    
+    // 상세보기 시에도 신문고 글이라면 권한 체크
+    if (post.board === '신문고' && (!window.isLoggedIn || window.currentUser.role !== '공장장')) {
+        alert("이 글을 볼 권한이 없습니다.");
+        return;
+    }
+
     window.currentViewingPostId = id;
     update(ref(db, `posts/${id}`), { views: (post.views || 0) + 1 });
     document.getElementById('boardView').style.display = 'none';
