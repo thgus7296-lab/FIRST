@@ -48,7 +48,7 @@
                 <button id="adminImgEditBtn" class="admin-edit-btn" onclick="openModal('imgEditModal')" style="display:none;">이미지 수정</button>
             </div>
             <div class="board-header">
-                <h2 id="currentBoardTitle" data-board="">게시판 이름</h2>
+                <h2 id="currentBoardTitle">게시판 이름</h2>
                 <button id="writeBtn" class="main-btn" onclick="openPostModal()">글쓰기</button>
             </div>
             <div id="postList" class="post-list"></div>
@@ -81,7 +81,7 @@
             <div class="detail-divider"></div>
             <div id="dtCommentList" class="dt-comment-list"></div>
             <div class="dt-input-area">
-                <input type="text" id="dtCommentInput" placeholder="댓글을 남겨주세요." autocomplete="off" autocapitalize="off" spellcheck="false">
+                <input type="text" id="dtCommentInput" placeholder="댓글을 남겨주세요.">
                 <button onclick="submitComment()">등록</button>
             </div>
         </div>
@@ -90,28 +90,12 @@
     <div id="loginModal" class="modal" onclick="closeModalByOutside(event, 'loginModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h2>로그인</h2>
-            <input type="text" id="loginEmpId" placeholder="사번" inputmode="numeric">
+            <input type="text" id="loginEmpId" placeholder="사번">
             <input type="password" id="loginPw" placeholder="비밀번호">
             <div style="display:flex; justify-content:space-between; margin-top:15px;">
                 <button class="main-btn" style="background:#888;" onclick="closeModal('loginModal')">취소</button>
                 <button class="main-btn" onclick="handleLogin()">로그인</button>
             </div>
-        </div>
-    </div>
-
-    <div id="imgEditModal" class="modal" onclick="closeModalByOutside(event, 'imgEditModal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close" onclick="closeModal('imgEditModal')">&times;</span>
-            <h2>라운지 이미지 변경</h2>
-            <div class="upload-group">
-                <label>배경 이미지</label>
-                <input type="file" id="bgInput" accept="image/*">
-            </div>
-            <div class="upload-group">
-                <label>프로필 이미지</label>
-                <input type="file" id="profileInput" accept="image/*">
-            </div>
-            <button class="main-btn" style="width:100%; margin-top:10px;" onclick="saveLoungeImages()">변경 내용 저장</button>
         </div>
     </div>
 
