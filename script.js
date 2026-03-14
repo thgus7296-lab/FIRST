@@ -27,26 +27,8 @@ let loungeSettings = {
     '신문고': { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' }
 };
 
-// --- 여기에 아래 코드를 삽입하세요 ---
-onValue(ref(db, 'loungeSettings'), (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        loungeSettings = { ...loungeSettings, ...data };
-        const currentTitleEl = document.getElementById('currentBoardTitle');
-        if (currentTitleEl) {
-            const currentTitle = currentTitleEl.innerText;
-            if (loungeSettings[currentTitle]) {
-                document.getElementById('bgDisplay').src = loungeSettings[currentTitle].bg;
-                document.getElementById('profileDisplay').src = loungeSettings[currentTitle].profile;
-            }
-        }
-    }
-});
-
-// 랜덤 닉네임 생성 함수
 const getRandomAnon = () => `익명${Math.floor(Math.random() * 90 + 10)}`;
 
-// --- 모달 제어 ---
 window.openModal = (id) => {
     const modal = document.getElementById(id);
     if (!modal) return;
@@ -66,18 +48,15 @@ window.closeModal = (id) => {
 
 window.closeModalByOutside = (event, id) => { if (event.target.id === id) window.closeModal(id); };
 
-// --- 게시판 목록 외부 터치 시 닫기 (수정됨) ---
 document.addEventListener('click', (e) => {
     const menu = document.getElementById('sideMenu');
     const headerLeft = document.querySelector('.header-left');
-    // 메뉴가 활성화되어 있고, 클릭한 대상이 메뉴 내부나 햄버거 버튼이 아닐 때 닫기
     if (menu.classList.contains('active') && !menu.contains(e.target) && !headerLeft.contains(e.target)) {
         menu.classList.remove('active');
-        if (history.state && history.state.menuOpen) history.back(); // 히스토리 동기화
+        if (history.state && history.state.menuOpen) history.back();
     }
 });
 
-// --- 로그인 시스템 ---
 window.handleLogin = async () => {
     const empId = document.getElementById('loginEmpId').value.trim();
     const pw = document.getElementById('loginPw').value.trim();
@@ -119,7 +98,6 @@ window.showUserInfo = () => {
     alert(`내 정보\n닉네임: ${window.currentUser.nickname}\n권한: ${window.currentUser.role}`);
 };
 
-// --- 화면 전환 및 뒤로가기 제어 (수정됨) ---
 window.toggleMenu = () => {
     const menu = document.getElementById('sideMenu');
     if (menu.classList.toggle('active')) history.pushState({ menuOpen: true }, '');
@@ -130,97 +108,33 @@ window.goHome = () => {
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('postDetailView').style.display = 'none';
     document.getElementById('sideMenu').classList.remove('active');
-    // 홈으로 이동 시 히스토리 초기화 (메인에서 뒤로가기 시 종료되도록)
     if (!history.state || history.state.view !== 'home') {
         history.replaceState({ view: 'home' }, '');
     }
 };
 
 window.loadBoard = (name) => {
-    // 1. 모든 뷰 숨기고 게시판 뷰 활성화
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('boardView').style.display = 'block';
     document.getElementById('postDetailView').style.display = 'none';
     
-    // 2. 게시판 제목 및 이미지 업데이트
     document.getElementById('currentBoardTitle').innerText = name;
     const setting = loungeSettings[name] || { bg: 'https://via.placeholder.com/800x200', profile: 'https://via.placeholder.com/100x100' };
     document.getElementById('bgDisplay').src = setting.bg;
     document.getElementById('profileDisplay').src = setting.profile;
     
-    // 3. 사이드 메뉴가 열려있다면 클래스만 제거하여 닫음 (히스토리 간섭 제거)
     const menu = document.getElementById('sideMenu');
     if (menu.classList.contains('active')) {
         menu.classList.remove('active');
     }
     
-    // 4. 게시글 목록 불러오기 및 히스토리 기록
     renderPosts(name);
     history.pushState({ view: 'board', boardName: name }, '');
 };
 
-window.saveLoungeImages = async () => {
-    const boardName = document.getElementById('currentBoardTitle').innerText;
-    const bgFile = document.getElementById('bgInput').files[0];
-    const profileFile = document.getElementById('profileInput').files[0];
-    
-    if (!bgFile && !profileFile) { alert("변경할 이미지를 선택해주세요."); return; }
-
-    const readFile = (file) => new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = () => { alert("파일을 읽는 중 오류가 발생했습니다."); };
-        reader.readAsDataURL(file);
-    });
-
-    try {
-        const updates = {};
-        if (bgFile) {
-            const bgData = await readFile(bgFile);
-            updates[`/loungeSettings/${boardName}/bg`] = bgData;
-        }
-        if (profileFile) {
-            const profileData = await readFile(profileFile);
-            updates[`/loungeSettings/${boardName}/profile`] = profileData;
-        }
-
-        // update(ref(db), updates) 방식을 사용하여 경로가 없어도 생성하며 저장
-        await update(ref(db), updates);
-        
-        alert("이미지가 성공적으로 변경되었습니다.");
-        window.closeModal('imgEditModal');
-        
-        // 입력창 초기화
-        document.getElementById('bgInput').value = "";
-        document.getElementById('profileInput').value = "";
-    } catch (e) {
-        console.error("이미지 저장 오류:", e);
-        alert("저장에 실패했습니다.");
-    }
-};
-
-    try {
-        let updates = {};
-        if (bgFile) updates[`loungeSettings/${boardName}/bg`] = await readFile(bgFile);
-        if (profileFile) updates[`loungeSettings/${boardName}/profile`] = await readFile(profileFile);
-
-        await update(ref(db), updates);
-        alert("이미지가 성공적으로 변경되었습니다.");
-        window.closeModal('imgEditModal');
-        document.getElementById('bgInput').value = "";
-        document.getElementById('profileInput').value = "";
-    } catch (e) {
-        console.error(e);
-        alert("저장에 실패했습니다.");
-    }
-};
-
-// --- 게시글 로직 ---
 onValue(ref(db, 'posts'), (snapshot) => {
-    // [핵심 수정] 어떤 요소든 현재 포커스가 가 있는 태그가 INPUT이거나 TEXTAREA면 즉시 중단
     const activeTagName = document.activeElement ? document.activeElement.tagName : '';
     if (activeTagName === 'INPUT' || activeTagName === 'TEXTAREA') {
-        // 사용자가 무엇이든 입력 중일 때는 배경 연산을 100% 멈춰서 자판 씹힘을 방지합니다.
         return; 
     }
 
@@ -231,19 +145,15 @@ onValue(ref(db, 'posts'), (snapshot) => {
     if (window.currentViewingPostId) {
         const post = window.allPosts.find(p => p.id === window.currentViewingPostId);
         if (post) { 
-            // 수치만 갱신 (텍스트 노드 변경은 부하가 적음)
             const likeCountEl = document.getElementById('dtLikeCount');
             const commentCountEl = document.getElementById('dtCommentCount');
             if(likeCountEl) likeCountEl.innerText = post.likedBy ? Object.keys(post.likedBy).length : 0;
             if(commentCountEl) commentCountEl.innerText = post.comments ? Object.keys(post.comments).length : 0;
-            
-            // 입력 중이 아님이 보장된 상태이므로 댓글 목록 렌더링
             renderComments(post.comments); 
         }
     } else {
         const boardView = document.getElementById('boardView');
         const isModalOpen = document.querySelector('.modal.active');
-        // 게시판 뷰가 활성화되어 있고, 글쓰기 모달 등이 닫혀 있을 때만 목록을 다시 그림
         if (boardView && boardView.style.display === 'block' && !isModalOpen) {
             const currentTitle = document.getElementById('currentBoardTitle').innerText;
             renderPosts(currentTitle);
@@ -268,33 +178,18 @@ window.savePost = async () => {
     const authorId = window.isLoggedIn ? window.currentUser.empId : "anonymous";
 
     const postData = {
-        board: board,
-        title: title,
-        content: content,
+        board, title, content,
         author: authorNick,
         authorId: authorId,
         timestamp: Date.now(),
-        views: 0
+        views: 0,
+        likedBy: {},
+        comments: {}
     };
-
-    try {
-        // push를 통해 새로운 고유 ID로 게시글 저장
-        const postsRef = ref(db, 'posts');
-        await push(postsRef, postData);
-        
-        window.closeModal('postModal');
-        // 저장 후 즉시 해당 게시판 리스트 갱신
-        renderPosts(board);
-    } catch (e) {
-        console.error("게시글 저장 오류:", e);
-        alert("저장에 실패했습니다.");
-    }
-};
 
     try {
         await push(ref(db, 'posts'), postData);
         window.closeModal('postModal');
-        // 등록 직후 포커스가 사라지므로, 이때 수동으로 렌더링 호출하여 내 글이 즉시 보이게 함
         const currentTitle = document.getElementById('currentBoardTitle').innerText;
         renderPosts(currentTitle);
     } catch (e) {
@@ -307,7 +202,6 @@ function renderPosts(boardName) {
     const listDiv = document.getElementById('postList');
     const filtered = window.allPosts.filter(p => p.board === boardName);
     
-    // 기기 식별용 ID 가져오기
     let deviceId = localStorage.getItem('h1_device_id');
     if (!deviceId) {
         deviceId = 'anon_' + Math.random().toString(36).substr(2, 9);
@@ -322,7 +216,6 @@ function renderPosts(boardName) {
 
     listDiv.innerHTML = filtered.map(p => {
         const displayContent = p.content.length > 10 ? p.content.substring(0, 10) + "..." : p.content;
-        // 하트 색상 결정 로직 수정
         const isLiked = p.likedBy && p.likedBy[myId];
         return `
             <div class="post-item" onclick="openPostDetail('${p.id}')">
@@ -348,7 +241,6 @@ window.openPostDetail = (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if(!post) return;
 
-    // 신문고 권한 강화: 공장장이 아니면 비로그인/일반인 모두 차단
     if (post.board === "신문고") {
         const isAuth = window.isLoggedIn && ["관리자", "공장장"].includes(window.currentUser.role);
         if (!isAuth) {
@@ -411,7 +303,6 @@ window.submitComment = async () => {
         timestamp: Date.now()
     };
 
-    // [즉시 표출] 서버 응답을 기다리지 않고 화면 하단에 바로 댓글 아이템 추가
     const list = document.getElementById('dtCommentList');
     const newCommentHtml = `
         <div class="dt-comment-item">
@@ -420,11 +311,9 @@ window.submitComment = async () => {
         </div>`;
     list.insertAdjacentHTML('beforeend', newCommentHtml);
     
-    // 입력창 즉시 비우기 및 포커스 유지 (자판 닫힘 방지)
     input.value = "";
     input.focus();
 
-    // 서버에 실제 데이터 저장
     try {
         await push(ref(db, `posts/${postId}/comments`), commentData);
     } catch (e) {
@@ -437,7 +326,6 @@ window.toggleLike = async (id) => {
     const post = window.allPosts.find(p => p.id === id);
     if (!post) return;
 
-    // 기기 고유 ID 생성 및 유지
     let deviceId = localStorage.getItem('h1_device_id');
     if (!deviceId) {
         deviceId = 'anon_' + Math.random().toString(36).substring(2, 11);
@@ -454,7 +342,6 @@ window.toggleLike = async (id) => {
     
     await set(ref(db, `posts/${id}/likedBy`), likedBy);
     
-    // 즉시 로컬 데이터 반영 (화면 깜빡임 방지)
     post.likedBy = likedBy;
     if (window.currentViewingPostId === id) updateDetailStats(post);
 };
@@ -470,7 +357,6 @@ function updateDetailStats(post) {
     const likeIcon = document.getElementById('dtLikeIcon');
     
     if (likeIcon) {
-        // 기존 클래스 제거 후 상태에 따라 주입
         likeIcon.classList.remove('fas', 'far', 'liked');
         if (isLiked) {
             likeIcon.classList.add('fas', 'fa-heart', 'liked');
@@ -493,18 +379,15 @@ function timeSince(date) {
     return Math.floor(seconds / 86400) + "일 전";
 }
 
-// --- 브라우저 뒤로가기 통합 관리 (수정됨) ---
 window.onpopstate = (event) => {
     const state = event.state;
     const menu = document.getElementById('sideMenu');
 
-    // 1. 메뉴가 열려있을 때 뒤로가기 하면 메뉴만 닫고 종료
     if (menu.classList.contains('active')) {
         menu.classList.remove('active');
         return;
     }
 
-    // 2. 모달 처리 (열린 모달이 없어야 할 상태면 모두 닫음)
     if (!state || !state.modalOpen) {
         document.querySelectorAll('.modal').forEach(m => {
             m.style.display = 'none';
@@ -512,15 +395,12 @@ window.onpopstate = (event) => {
         });
     }
 
-    // 3. 히스토리 상태에 따른 화면 전환
     if (state && state.view === 'board') {
-        // 게시판 뷰로 복구
         document.getElementById('homeView').style.display = 'none';
         document.getElementById('boardView').style.display = 'block';
         document.getElementById('postDetailView').style.display = 'none';
         renderPosts(state.boardName);
     } else if (state && state.view === 'detail') {
-        // 게시글 상세 뷰로 복구
         const post = window.allPosts.find(p => p.id === state.postId);
         if (post) {
             document.getElementById('boardView').style.display = 'none';
@@ -531,7 +411,6 @@ window.onpopstate = (event) => {
             renderComments(post.comments);
         }
     } else {
-        // 상태가 없거나 home인 경우 무조건 홈 화면 표시
         document.getElementById('homeView').style.display = 'block';
         document.getElementById('boardView').style.display = 'none';
         document.getElementById('postDetailView').style.display = 'none';
@@ -539,7 +418,6 @@ window.onpopstate = (event) => {
     }
 };
 
-// 앱 시작 시 메인 상태 주입
 window.onload = () => {
     history.replaceState({ view: 'home' }, '');
 };
